@@ -1,8 +1,59 @@
-# Compiled class file
-*.class
 
-# Log file
+# Archivos compilados
+*.class
+target/
+out/
+build/
+
+# Archivos de logs
 *.log
+logs/
+
+# Archivos de configuración local con credenciales
+application-local.properties
+*.env
+secrets.properties
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# IDE - Eclipse
+.classpath
+.project
+.settings/
+
+# IDE - VS Code
+.vscode/
+
+# Maven
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Archivos temporales
+*.tmp
+*.bak
+*.swp
+*~
+
+# Archivos de base de datos local
+*.db
+*.sqlite
+
+# Certificados y claves
+*.pem
+*.key
+*.jks
+*.p12
 
 # BlueJ files
 *.ctxt
