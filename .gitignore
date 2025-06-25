@@ -1,5 +1,4 @@
-
-# Archivos compilados
+# Compiled class file
 *.class
 target/
 out/
