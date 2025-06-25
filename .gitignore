@@ -9,7 +9,8 @@ build/
 logs/
 
 # Archivos de configuración local con credenciales
-application-local.properties
+application.properties
+database.properties
 *.env
 secrets.properties
 
