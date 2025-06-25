@@ -1,5 +1,4 @@
-
-# Archivos compilados
+# Compiled class file
 *.class
 target/
 out/
@@ -10,7 +9,8 @@ build/
 logs/
 
 # Archivos de configuración local con credenciales
-application-local.properties
+application.properties
+database.properties
 *.env
 secrets.properties
 
