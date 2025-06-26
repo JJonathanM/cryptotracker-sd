@@ -9,10 +9,8 @@ build/
 logs/
 
 # Archivos de configuración local con credenciales
-application.properties
-database.properties
+*.properties
 *.env
-secrets.properties
 
 # IDE - IntelliJ IDEA
 .idea/
