@@ -6,6 +6,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.cryptotracker.database.DatabaseManager;
+import com.cryptotracker.scraper.ScraperService;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -17,6 +18,7 @@ import java.util.*;
 public class WebServer {
     // Endpoints del API
     private static final String STATUS_ENDPOINT = "/status";
+    private static final String HEALTH_ENDPOINT = "/health";
     private static final String API_PRICES_CURRENT = "/prices/current";
     private static final String API_PRICES_HISTORY = "/prices/history";
     private static final String API_CRYPTOS = "/cryptos";
@@ -25,6 +27,7 @@ public class WebServer {
     private HttpServer server;
     private final ObjectMapper objectMapper;
     private DatabaseManager dbManager;
+    private ScraperService scraperService;
     
     // Variable para indicar si este nodo es líder
     private boolean isLeader = false;
@@ -37,6 +40,10 @@ public class WebServer {
     
     public void setDatabaseManager(DatabaseManager dbManager) {
         this.dbManager = dbManager;
+    }
+
+    public void setScraperService(ScraperService scraperService) {
+        this.scraperService = scraperService;
     }
     
     public void setLeaderStatus(boolean isLeader) {
@@ -53,12 +60,14 @@ public class WebServer {
         
         // Crear contextos para cada endpoint
         HttpContext statusContext = server.createContext(STATUS_ENDPOINT);
+        HttpContext healthContext = server.createContext(HEALTH_ENDPOINT);
         HttpContext currentPricesContext = server.createContext(API_PRICES_CURRENT);
         HttpContext historicalPricesContext = server.createContext(API_PRICES_HISTORY);
         HttpContext cryptosContext = server.createContext(API_CRYPTOS);
         
         // Asignar handlers
         statusContext.setHandler(this::handleStatusCheckRequest);
+        healthContext.setHandler(this::handleHealthCheckRequest);
         currentPricesContext.setHandler(this::handleCurrentPricesRequest);
         historicalPricesContext.setHandler(this::handleHistoricalPricesRequest);
         cryptosContext.setHandler(this::handleCryptosListRequest);
@@ -86,6 +95,51 @@ public class WebServer {
         }
         
         sendResponse(responseMessage.getBytes(), exchange);
+    }
+
+    private void handleHealthCheckRequest(HttpExchange exchange) throws IOException {
+        if (!exchange.getRequestMethod().equalsIgnoreCase("get")) {
+            exchange.close();
+            return;
+        }
+        
+        Map<String, Object> health = new HashMap<>();
+        
+        // Verificar salud del scraper si es líder
+        boolean scraperHealthy = true;
+        Map<String, Object> scraperStats = null;
+        
+        if (isLeader && scraperService != null) {
+            scraperHealthy = scraperService.isHealthy();
+            scraperStats = scraperService.getStats();
+        }
+        
+        // Verificar conexión a BD
+        boolean dbHealthy = dbManager.testConnection();
+        
+        // Estado general
+        String overallStatus = (dbHealthy && (!isLeader || scraperHealthy)) ? "healthy" : "unhealthy";
+        
+        health.put("status", overallStatus);
+        health.put("service", "cryptotracker-server");
+        health.put("timestamp", System.currentTimeMillis());
+        health.put("isLeader", isLeader);
+        health.put("database", dbHealthy ? "connected" : "disconnected");
+        
+        if (isLeader && scraperStats != null) {
+            health.put("scraper", scraperStats);
+        }
+        
+        String response = objectMapper.writeValueAsString(health);
+        
+        System.out.println("Health check - Response: " + response);
+        
+        exchange.getResponseHeaders().add("Content-Type", "application/json");
+        
+        // Retornar 503 si no está saludable
+        int statusCode = overallStatus.equals("healthy") ? 200 : 503;
+        exchange.sendResponseHeaders(statusCode, response.getBytes().length);
+        sendResponse(response.getBytes(), exchange);
     }
     
     private void handleCurrentPricesRequest(HttpExchange exchange) throws IOException {
