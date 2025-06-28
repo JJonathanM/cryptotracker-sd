@@ -49,14 +49,7 @@ public class CryptoTrackerServer {
             
             System.out.println("\nServidor iniciado correctamente");
             System.out.println("Puerto: " + config.getProperty("server.port"));
-            
-            //Solo muestra ZooKeeper si está configurado y disponible
-            if (leaderElection != null) {
-                System.out.println("ZooKeeper: " + config.getProperty("zookeeper.hosts"));
-            } else {
-                    System.out.println("⚡ Modo: Standalone (sin ZooKeeper)");
-            }
-            
+            System.out.println("ZooKeeper: " + config.getProperty("zookeeper.hosts"));
             System.out.println("\nPresiona Ctrl+C para detener...\n");
             
             // Mantener el servidor en ejecución

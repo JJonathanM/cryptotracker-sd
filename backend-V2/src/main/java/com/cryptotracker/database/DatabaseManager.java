@@ -66,6 +66,28 @@ public class DatabaseManager {
     public Integer getCryptoId(String symbol) {
         return cryptoIdCache.get(symbol);
     }
+
+    public boolean testConnection() {
+        try (Connection conn = getConnection()) {
+            return conn != null && !conn.isClosed();
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+
+    public void reconnect() throws SQLException {
+        // Cerrar pool actual si existe
+        if (dataSource != null) {
+            if (dataSource instanceof MysqlDataSource) {
+                ((DatabaseManager) dataSource).close();
+            }
+        }
+        
+        // Reinicializar
+        initialize();
+        
+        System.out.println("Reconexión a base de datos completada");
+    }
     
     public void close() throws SQLException {
         // Limpiar recursos si es necesario
