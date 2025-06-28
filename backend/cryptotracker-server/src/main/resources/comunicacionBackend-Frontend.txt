@@ -126,16 +126,16 @@ Base URL
 ### Testing con cURL
 
 # 1. Estatus
-curl -X GET http://LOAD_BALANCER_IP/status
+curl -X GET http://34.56.65.161:8080/status
 
 # 2. Lista de criptomonedas
-curl -X GET http://LOAD_BALANCER_IP/cryptos
+curl -X GET http://34.56.65.161:8080/cryptos
 
 # 3. Precios actuales
-curl -X GET http://LOAD_BALANCER_IP/prices/current
+curl -X GET http://34.56.65.161:8080/prices/current
 
 # 4. Historial de Bitcoin (últimas 3 horas)
-curl -X GET "http://LOAD_BALANCER_IP/prices/history?crypto_id=1&hours=3"
+curl -X GET "http://34.56.65.161:8080/prices/history?crypto_id=1&hours=3"
 
 ### Debugging y Logs
 

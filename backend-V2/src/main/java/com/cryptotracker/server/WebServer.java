@@ -112,7 +112,14 @@ public class WebServer {
             responseMessage += "Estado: SEGUIDOR - Sin ejecutar scraper\n";
         }
         
-        sendResponse(responseMessage.getBytes(), exchange);
+        byte[] responseBytes = responseMessage.getBytes();
+    
+        // AGREGAR ESTAS LÍNEAS:
+        exchange.getResponseHeaders().add("Content-Type", "text/plain");
+        exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+        exchange.sendResponseHeaders(200, responseBytes.length);
+        
+        sendResponse(responseBytes, exchange);
     }
 
     private void handleHealthCheckRequest(HttpExchange exchange) throws IOException {
@@ -152,6 +159,7 @@ public class WebServer {
         
         System.out.println("Health check - Response: " + response);
         
+        exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().add("Content-Type", "application/json");
         
         // Retornar 503 si no está saludable
@@ -221,6 +229,7 @@ public class WebServer {
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             
+            exchange.sendResponseHeaders(200, jsonResponse.getBytes().length);
             sendResponse(jsonResponse.getBytes(), exchange);
             
         } catch (Exception e) {
@@ -324,6 +333,7 @@ public class WebServer {
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             
+            exchange.sendResponseHeaders(200, jsonResponse.getBytes().length);
             sendResponse(jsonResponse.getBytes(), exchange);
             
         } catch (Exception e) {
@@ -379,6 +389,7 @@ public class WebServer {
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             
+            exchange.sendResponseHeaders(200, jsonResponse.getBytes().length);
             sendResponse(jsonResponse.getBytes(), exchange);
             
         } catch (Exception e) {
@@ -463,6 +474,7 @@ public class WebServer {
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             
+            exchange.sendResponseHeaders(200, jsonResponse.getBytes().length);
             sendResponse(jsonResponse.getBytes(), exchange);
             
         } catch (Exception e) {
@@ -572,6 +584,7 @@ public class WebServer {
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             
+            exchange.sendResponseHeaders(200, jsonResponse.getBytes().length);
             sendResponse(jsonResponse.getBytes(), exchange);
             
         } catch (Exception e) {
@@ -673,6 +686,7 @@ public class WebServer {
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             
+            exchange.sendResponseHeaders(200, jsonResponse.getBytes().length);
             sendResponse(jsonResponse.getBytes(), exchange);
             
         } catch (Exception e) {
@@ -755,7 +769,6 @@ public class WebServer {
     }
     
     private void sendResponse(byte[] responseBytes, HttpExchange exchange) throws IOException {
-        exchange.sendResponseHeaders(200, responseBytes.length);
         OutputStream outputStream = exchange.getResponseBody();
         System.out.println("Enviando " + responseBytes.length + " bytes");
         outputStream.write(responseBytes);
