@@ -1,0 +1,100 @@
+{
+  "currentPrices": [
+    {
+      "id": 1,
+      "symbol": "BTC",
+      "name": "Bitcoin",
+      "image_url": "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+      "price": 50000.12345678,
+      "last_update": "2023-05-15T12:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "symbol": "ETH",
+      "name": "Ethereum",
+      "image_url": "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+      "price": 3000.98765432,
+      "last_update": "2023-05-15T12:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "symbol": "XRP",
+      "name": "XRP",
+      "image_url": "https://cryptologos.cc/logos/xrp-xrp-logo.png",
+      "price": 0.54321098,
+      "last_update": "2023-05-15T12:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "symbol": "SOL",
+      "name": "Solana",
+      "image_url": "https://cryptologos.cc/logos/solana-sol-logo.png",
+      "price": 150.12345678,
+      "last_update": "2023-05-15T12:00:00.000Z"
+    },
+    {
+      "id": 5,
+      "symbol": "TRX",
+      "name": "TRON",
+      "image_url": "https://cryptologos.cc/logos/tron-trx-logo.png",
+      "price": 0.08765432,
+      "last_update": "2023-05-15T12:00:00.000Z"
+    },
+    {
+      "id": 6,
+      "symbol": "DOGE",
+      "name": "Dogecoin",
+      "image_url": "https://cryptologos.cc/logos/dogecoin-doge-logo.png",
+      "price": 0.12345678,
+      "last_update": "2023-05-15T12:00:00.000Z"
+    },
+    {
+      "id": 7,
+      "symbol": "ADA",
+      "name": "Cardano",
+      "image_url": "https://cryptologos.cc/logos/cardano-ada-logo.png",
+      "price": 0.45678901,
+      "last_update": "2023-05-15T12:00:00.000Z"
+    },
+    {
+      "id": 8,
+      "symbol": "HYPE",
+      "name": "Hyperliquid",
+      "image_url": "https://s2.coinmarketcap.com/static/img/coins/64x64/31226.png",
+      "price": 12.34567890,
+      "last_update": "2023-05-15T12:00:00.000Z"
+    },
+    {
+      "id": 9,
+      "symbol": "BCH",
+      "name": "Bitcoin Cash",
+      "image_url": "https://cryptologos.cc/logos/bitcoin-cash-bch-logo.png",
+      "price": 450.98765432,
+      "last_update": "2023-05-15T12:00:00.000Z"
+    },
+    {
+      "id": 10,
+      "symbol": "LINK",
+      "name": "Chainlink",
+      "image_url": "https://cryptologos.cc/logos/chainlink-link-logo.png",
+      "price": 25.67890123,
+      "last_update": "2023-05-15T12:00:00.000Z"
+    }
+  ],
+  "historicalData": {
+    "BTC": [
+      {"price_time": "2023-05-15T11:00:00.000Z", "price": 49800.12345678},
+      {"price_time": "2023-05-15T11:15:00.000Z", "price": 49900.98765432},
+      {"price_time": "2023-05-15T11:30:00.000Z", "price": 49950.54321098},
+      {"price_time": "2023-05-15T11:45:00.000Z", "price": 50020.12345678},
+      {"price_time": "2023-05-15T12:00:00.000Z", "price": 50000.12345678}
+    ],
+    "ETH": [
+      {"price_time": "2023-05-15T11:00:00.000Z", "price": 2980.12345678},
+      {"price_time": "2023-05-15T11:15:00.000Z", "price": 2995.98765432},
+      {"price_time": "2023-05-15T11:30:00.000Z", "price": 3002.54321098},
+      {"price_time": "2023-05-15T11:45:00.000Z", "price": 3005.12345678},
+      {"price_time": "2023-05-15T12:00:00.000Z", "price": 3000.98765432}
+    ]
+  }
+}
