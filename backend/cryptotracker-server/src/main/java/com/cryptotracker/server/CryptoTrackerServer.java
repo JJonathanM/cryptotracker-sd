@@ -21,12 +21,14 @@ public class CryptoTrackerServer {
     private static LeaderElection leaderElection;
     private static ScraperService scraperService;
     private static ScheduledExecutorService cleanupExecutor;
+
+    static int port = 8080; // Puerto por defecto
     
     public static void main(String[] args) {
         try {            
             // Permitir puerto personalizado desde argumentos
             if (args.length > 0) {
-                System.setProperty("server.port", args[0]);
+                port = Integer.parseInt(args[0]);
             }
             
             // Cargar configuración
@@ -95,7 +97,6 @@ public class CryptoTrackerServer {
     }
     
     private static void startWebServer() throws Exception {
-        int port = Integer.parseInt(config.getProperty("server.port", "8080"));
         webServer = new WebServer(port);
         
         // Configurar el DatabaseManager
