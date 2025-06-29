@@ -25,9 +25,7 @@ const SingleCryptoChart: React.FC = () => {
   };
 
   return (
-    <div className='container black-text'>
-      <h5 className="center black-text  ">Gráfico Individual de Criptomoneda</h5>
-      
+    <div className='container black-text'>    
       <div className="row ">
         <div className="input-field col s12 m6 ">
           <select 

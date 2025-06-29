@@ -14,7 +14,7 @@ const ChartsDashboard: React.FC = () => {
         <div className="col s12 m12 l6">
           <div className="card z-depth-2" style={{ borderRadius: '8px' }}>
             <div className="card-content">
-              <span className="card-title">Análisis Individual</span>
+              <span className="card-title black-text">Análisis Individual</span>
               <div className="divider"></div>
               <div style={{ padding: '15px 0' }}>
                 <SingleCryptoChart />
@@ -27,10 +27,10 @@ const ChartsDashboard: React.FC = () => {
         <div className="col s12 m12 l6">
           <div className="card z-depth-2" style={{ borderRadius: '8px' }}>
             <div className="card-content">
-              <span className="card-title">Visión General del Mercado</span>
+              <span className="card-title black-text">Comparativa Combinada</span>
               <div className="divider"></div>
               <div style={{ padding: '15px 0' }}>
-                <AllCryptosChart />
+                <CombinedChart />
               </div>
             </div>
           </div>
@@ -42,10 +42,10 @@ const ChartsDashboard: React.FC = () => {
         <div className="col s12">
           <div className="card z-depth-2" style={{ borderRadius: '8px' }}>
             <div className="card-content">
-              <span className="card-title">Comparativa Combinada</span>
+              <span className="card-title black-text">Visión General del Mercado</span>
               <div className="divider"></div>
               <div style={{ padding: '15px 0' }}>
-                <CombinedChart />
+                <AllCryptosChart />
               </div>
             </div>
           </div>

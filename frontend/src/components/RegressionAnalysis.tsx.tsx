@@ -1,31 +1,194 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
+interface Crypto {
+  id: number;
+  symbol: string;
+  name: string;
+}
+
+interface PriceData {
+  timestamp_unix: number;
+  price: number;
+  timestamp: string;
+}
+
+interface RegressionData {
+  data_points: number;
+  intercept: number;
+  equation: string;
+  slope: number;
+  r_squared: number;
+}
+
+interface ApiResponse {
+  symbol: string;
+  data: PriceData[];
+  regression: RegressionData;
+  start_hour: number;
+  name: string;
+  count: number;
+  end_hour: number;
+  crypto_id: number;
+  status: string;
+}
 
 const RegressionAnalysis: React.FC = () => {
-  const [crypto, setCrypto] = useState<string>('bitcoin');
+  const [crypto, setCrypto] = useState<string>('1');
   const [hours, setHours] = useState<number>(6);
-  const [analysis, setAnalysis] = useState<{equation: string, chartUrl: string} | null>(null);
+  const [analysis, setAnalysis] = useState<ApiResponse | null>(null);
+  const [cryptos, setCryptos] = useState<Crypto[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const cryptos = [
-    { id: 'bitcoin', name: 'Bitcoin' },
-    { id: 'ethereum', name: 'Ethereum' },
-    { id: 'cardano', name: 'Cardano' },
-    { id: 'solana', name: 'Solana' },
-    { id: 'ripple', name: 'Ripple' },
-    { id: 'polkadot', name: 'Polkadot' },
-    { id: 'dogecoin', name: 'Dogecoin' },
-    { id: 'avalanche', name: 'Avalanche' },
-    { id: 'litecoin', name: 'Litecoin' },
-    { id: 'chainlink', name: 'Chainlink' },
-  ];
-
-  const generateAnalysis = () => {
-    // Simulando la respuesta de la API
-    const mockAnalysis = {
-      equation: `y = ${(Math.random() * 2 - 1).toFixed(2)}x + ${(Math.random() * 10000).toFixed(2)}`,
-      chartUrl: `https://via.placeholder.com/800x400.png?text=Regresión+de+${crypto}+últimas+${hours}+horas`
+  useEffect(() => {
+    // Cargar la lista de criptomonedas
+    const fetchCryptos = async () => {
+      try {
+        const response = await fetch('http://34.56.65.161/cryptos');
+        const data = await response.json();
+        if (data.status === 'success') {
+          setCryptos(data.data);
+        } else {
+          setError('Error al cargar las criptomonedas');
+        }
+      } catch (err) {
+        setError('Error de conexión al servidor');
+      }
     };
+
+    fetchCryptos();
+  }, []);
+
+  const generateAnalysis = async () => {
+    setLoading(true);
+    setError(null);
     
-    setAnalysis(mockAnalysis);
+    try {
+      const response = await fetch(
+        `http://34.56.65.161/prices/regression/?crypto_id=${crypto}&hours=${hours}`
+      );
+      const data: ApiResponse = await response.json();
+      
+      if (data.status === 'success') {
+        setAnalysis(data);
+      } else {
+        setError('Error al generar el análisis');
+      }
+    } catch (err) {
+      setError('Error de conexión al servidor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Función para renderizar el gráfico SVG
+  const renderChart = (data: PriceData[]) => {
+    if (!data || data.length === 0) return null;
+
+    // Preparamos los datos para el gráfico
+    const prices = data.map(d => d.price);
+    const timestamps = data.map(d => new Date(d.timestamp).toLocaleTimeString());
+    
+    // Calculamos dimensiones y escalas
+    const width = 800;
+    const height = 400;
+    const padding = 40;
+    
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const priceRange = maxPrice - minPrice;
+    
+    const xScale = (index: number) => 
+      padding + (index * (width - 2 * padding)) / (data.length - 1);
+    const yScale = (price: number) => 
+      height - padding - ((price - minPrice) * (height - 2 * padding)) / priceRange;
+
+    // Puntos para la línea de regresión (simplificado)
+    const regressionPoints = analysis ? [
+      { x: 0, y: analysis.regression.intercept },
+      { 
+        x: data.length - 1, 
+        y: analysis.regression.intercept + analysis.regression.slope * (data.length - 1)
+      }
+    ] : [];
+
+    return (
+      <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ maxWidth: '800px', margin: '0 auto' }}>
+        {/* Eje X */}
+        <line 
+          x1={padding} y1={height - padding} 
+          x2={width - padding} y2={height - padding} 
+          stroke="black" 
+        />
+        
+        {/* Eje Y */}
+        <line 
+          x1={padding} y1={padding} 
+          x2={padding} y2={height - padding} 
+          stroke="black" 
+        />
+        
+        {/* Etiquetas eje X */}
+        {timestamps
+          .filter((_, i) => i % Math.ceil(data.length / 5) === 0)
+          .map((time, i) => (
+            <text 
+              key={i}
+              x={xScale(i * Math.ceil(data.length / 5))} 
+              y={height - padding / 2} 
+              textAnchor="middle"
+              fontSize="10"
+            >
+              {time}
+            </text>
+          ))}
+        
+        {/* Etiquetas eje Y */}
+        {[minPrice, minPrice + priceRange * 0.25, minPrice + priceRange * 0.5, minPrice + priceRange * 0.75, maxPrice].map((price, i) => (
+          <text 
+            key={i}
+            x={padding / 2} 
+            y={yScale(price)} 
+            textAnchor="middle"
+            fontSize="10"
+          >
+            {price.toFixed(2)}
+          </text>
+        ))}
+        
+        {/* Línea de precios */}
+        <polyline
+          fill="none"
+          stroke="#4285F4"
+          strokeWidth="2"
+          points={prices.map((price, i) => `${xScale(i)},${yScale(price)}`).join(' ')}
+        />
+        
+        {/* Línea de regresión */}
+        {analysis && (
+          <line
+            x1={xScale(0)}
+            y1={yScale(regressionPoints[0].y)}
+            x2={xScale(data.length - 1)}
+            y2={yScale(regressionPoints[1].y)}
+            stroke="#EA4335"
+            strokeWidth="2"
+            strokeDasharray="5,5"
+          />
+        )}
+        
+        {/* Leyenda */}
+        <rect x={width - 150} y={padding} width={140} height={40} fill="white" stroke="black" />
+        <text x={width - 140} y={padding + 15} fontSize="12">
+          <tspan fill="#4285F4">●</tspan> Precios
+        </text>
+        {analysis && (
+          <text x={width - 140} y={padding + 30} fontSize="12">
+            <tspan fill="#EA4335">●</tspan> Regresión
+          </text>
+        )}
+      </svg>
+    );
   };
 
   return (
@@ -38,23 +201,28 @@ const RegressionAnalysis: React.FC = () => {
             value={crypto} 
             onChange={(e) => setCrypto(e.target.value)}
             className="browser-default black-text"
+            disabled={loading}
           >
             {cryptos.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.id} value={c.id.toString()}>{c.name}</option>
             ))}
           </select>
         </div>
         
         <div className="input-field col s12 m6 black-text">
-          <input 
-            type="number" 
-            min="1" 
-            max="24" 
-            value={hours} 
-            onChange={(e) => setHours(parseInt(e.target.value))}
-            className="validate"
-          />
-          <label htmlFor="hours">Horas (1-24)</label>
+          <form action="#">
+            <p className="range-field">
+              <label>Horas: {hours}</label>
+              <input 
+                type="range" 
+                min="1" 
+                max="24" 
+                value={hours} 
+                onChange={(e) => setHours(parseInt(e.target.value))}
+                disabled={loading}
+              />
+            </p>
+          </form>
         </div>
       </div>
       
@@ -62,25 +230,35 @@ const RegressionAnalysis: React.FC = () => {
         <button 
           onClick={generateAnalysis}
           className="btn waves-effect waves-light blue"
+          disabled={loading}
         >
-          Generar Análisis
+          {loading ? 'Generando...' : 'Generar Análisis'}
         </button>
       </div>
       
+      {error && (
+        <div className="row">
+          <div className="col s12">
+            <div className="card-panel red lighten-2 white-text">
+              {error}
+            </div>
+          </div>
+        </div>
+      )}
+      
       {analysis && (
         <div className="row">
-          <div className="col s12 ">
+          <div className="col s12">
             <h5>Ecuación de regresión lineal:</h5>
             <div className="card-panel blue-custom white-text">
-              <code style={{ fontSize: '1.2em' }}>{analysis.equation}</code>
+              <code style={{ fontSize: '1.2em' }}>{analysis.regression.equation}</code>
+              <p>R² = {analysis.regression.r_squared.toFixed(4)}</p>
             </div>
             
             <h5>Gráfico de regresión:</h5>
-            <img 
-              src={analysis.chartUrl} 
-              alt={`Gráfico de regresión de ${crypto}`} 
-              style={{ width: '100%', marginTop: '10px' }}
-            />
+            <div className="card-panel">
+              {renderChart(analysis.data)}
+            </div>
           </div>
         </div>
       )}

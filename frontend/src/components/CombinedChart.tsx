@@ -38,9 +38,7 @@ const CombinedChart: React.FC = () => {
   };
 
   return (
-    <div className="container black-text">
-      <h5 className="center">Gráfico Combinado de Criptomonedas</h5>
-      
+    <div className="container black-text">      
       <div className="row">
         <div className="col s12">
           <h5>Selecciona las criptomonedas:</h5>

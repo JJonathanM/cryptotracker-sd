@@ -230,8 +230,6 @@ const AllCryptoChart: React.FC = () => {
 
   return (
     <div className="container">
-      <h5 className="center black-text">Gráfico de Todas las Criptomonedas</h5>
-      
       <div className="row">
         <div className="input-field col s12 m6 offset-m3">
           <input 
