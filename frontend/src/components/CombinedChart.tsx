@@ -31,18 +31,14 @@ const CombinedChart: React.FC = () => {
       alert('Selecciona al menos una criptomoneda');
       return;
     }
-    
-    // Aquí iría la llamada a tu API de Java para generar el gráfico
-    // const response = await fetch(`tu-api/chart/combined?cryptos=${selectedCryptos.join(',')}&hours=${hours}`);
-    // const data = await response.json();
-    
+
     // Simulando la URL de la imagen del gráfico generado
     const mockChartUrl = `https://via.placeholder.com/800x400.png?text=Gráfico+combinado+de+${selectedCryptos.length}+criptos+últimas+${hours}+horas`;
     setChartUrl(mockChartUrl);
   };
 
   return (
-    <div className="container">
+    <div className="container black-text">
       <h4 className="center">Gráfico Combinado de Criptomonedas</h4>
       
       <div className="row">
@@ -61,14 +57,14 @@ const CombinedChart: React.FC = () => {
           ))}
         </div>
         
-        <div className="input-field col s12 m6">
+        <div className="input-field col s12 m6 black-text">
           <input 
             type="number" 
             min="1" 
             max="24" 
             value={hours} 
             onChange={(e) => setHours(parseInt(e.target.value))}
-            className="validate"
+            className="validate black-text"
           />
           <label htmlFor="hours">Horas (1-24)</label>
         </div>

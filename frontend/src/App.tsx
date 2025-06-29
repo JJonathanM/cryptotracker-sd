@@ -27,12 +27,13 @@ const App: React.FC = () => {
           width: '100%',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center', // Centrado horizontal
-          padding: '20px 0' // Espaciado vertical
+          alignItems: 'center',
+          padding: '20px 0',
+          backgroundColor: 'white'
         }}>
           <div style={{
             width: '100%',
-            maxWidth: '1200px', // Ancho máximo fijo
+            maxWidth: '1200px',
             padding: '0 15px'
           }}>
             <Routes>
@@ -46,11 +47,11 @@ const App: React.FC = () => {
           </div>
         </main>
         
-        <footer style={{
+        <footer className="footer-custom" style={{
           width: '100%',
           flexShrink: 0,
-          marginTop: 'auto' // Empuja el footer hacia abajo
-        }} className="page-footer grey lighten-3">
+          marginTop: 'auto'
+        }}>
           <div className="container grey-text text-darken-1">
             © {new Date().getFullYear()} CryptoTracker
           </div>

@@ -28,3 +28,47 @@ main {
 .app footer {
   flex-shrink: 0;
 }
+
+.navbar-custom {
+  background-color: #1a1d40 !important;
+}
+
+.footer-custom {
+  background-color: #1a1d40 !important;
+}
+
+.blue-custom{
+  background-color: #254D70;
+}
+
+.card {
+  transition: all 0.3s ease-out;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Estilo para los enlaces de las tarjetas */
+.card-action a {
+  color: #000 !important; /* Texto negro */
+  font-weight: 500;
+  transition: color 0.3s ease;
+  text-decoration: none;
+}
+
+.card-action a:hover {
+  color: #6a1b9a !important; /* Color morado al hacer hover (usa tu color personalizado) */
+  text-decoration: underline;
+}
+
+/* Opcional: Efecto de "levantado" más pronunciado */
+.card:hover {
+  transform: translateY(-10px) scale(1.02);
+}
+

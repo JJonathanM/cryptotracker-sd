@@ -19,10 +19,6 @@ const RegressionAnalysis: React.FC = () => {
   ];
 
   const generateAnalysis = () => {
-    // Aquí iría la llamada a tu API de Java para generar el análisis
-    // const response = await fetch(`tu-api/regression?crypto=${crypto}&hours=${hours}`);
-    // const data = await response.json();
-    
     // Simulando la respuesta de la API
     const mockAnalysis = {
       equation: `y = ${(Math.random() * 2 - 1).toFixed(2)}x + ${(Math.random() * 10000).toFixed(2)}`,
@@ -33,15 +29,15 @@ const RegressionAnalysis: React.FC = () => {
   };
 
   return (
-    <div className="container">
+    <div className="container black-text">
       <h4 className="center">Análisis de Regresión Lineal</h4>
       
       <div className="row">
-        <div className="input-field col s12 m6">
+        <div className="input-field col s12 m6 black-text">
           <select 
             value={crypto} 
             onChange={(e) => setCrypto(e.target.value)}
-            className="browser-default"
+            className="browser-default black-text"
           >
             {cryptos.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
@@ -49,7 +45,7 @@ const RegressionAnalysis: React.FC = () => {
           </select>
         </div>
         
-        <div className="input-field col s12 m6">
+        <div className="input-field col s12 m6 black-text">
           <input 
             type="number" 
             min="1" 
@@ -73,9 +69,9 @@ const RegressionAnalysis: React.FC = () => {
       
       {analysis && (
         <div className="row">
-          <div className="col s12">
+          <div className="col s12 ">
             <h5>Ecuación de regresión lineal:</h5>
-            <div className="card-panel teal lighten-2 white-text">
+            <div className="card-panel blue-custom white-text">
               <code style={{ fontSize: '1.2em' }}>{analysis.equation}</code>
             </div>
             

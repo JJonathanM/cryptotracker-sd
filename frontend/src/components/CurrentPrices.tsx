@@ -43,10 +43,10 @@ const CurrentPrices: React.FC = () => {
 
   return (
     <div className="container">
-      <h4 className="center">Precios Actuales de Criptomonedas</h4>
-      <p className="center">Última actualización: {new Date().toLocaleTimeString()}</p>
+      <h4 className="center black-text">Precios Actuales de Criptomonedas</h4>
+      <p className="center black-text">Última actualización: {new Date().toLocaleTimeString()}</p>
       
-      <table className="striped">
+      <table className="striped black-text">
         <thead>
           <tr>
             <th>Icono</th>

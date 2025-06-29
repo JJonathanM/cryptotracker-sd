@@ -29,15 +29,15 @@ const SingleCryptoChart: React.FC = () => {
   };
 
   return (
-    <div className='container'>
-      <h4 className="center">Gráfico Individual de Criptomoneda</h4>
+    <div className='container black-text'>
+      <h4 className="center black-text  ">Gráfico Individual de Criptomoneda</h4>
       
-      <div className="row">
-        <div className="input-field col s12 m6">
+      <div className="row ">
+        <div className="input-field col s12 m6 ">
           <select 
             value={crypto} 
             onChange={(e) => setCrypto(e.target.value)}
-            className="browser-default"
+            className="browser-default black-text"
           >
             {cryptos.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
@@ -45,7 +45,7 @@ const SingleCryptoChart: React.FC = () => {
           </select>
         </div>
         
-        <div className="input-field col s12 m6">
+        <div className="input-field col s12 m6 black-text">
           <input 
             type="number" 
             min="1" 
