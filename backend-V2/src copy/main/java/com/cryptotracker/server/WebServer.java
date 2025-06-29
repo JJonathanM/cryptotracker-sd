@@ -529,6 +529,7 @@ public class WebServer {
                 FROM prices p
                 INNER JOIN crypto c ON p.crypto_id = c.id
                 WHERE p.crypto_id IN (%s)
+                AND p.price_time >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
                 AND HOUR(p.price_time) >= ? AND HOUR(p.price_time) <= ?
                 ORDER BY c.id, p.price_time ASC
             """.formatted(placeholders);

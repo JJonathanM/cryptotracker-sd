@@ -1,0 +1,146 @@
+Comunicación Frontend-Backend
+
+Arquitectura de Comunicación
+
+```
+    [Frontend React]
+           |
+      HTTP/HTTPS
+           |
+    [Load Balancer]
+           |
+    [Backend Servers]
+           |
+       [MySQL DB]
+```
+
+Endpoints API REST
+
+Base URL
+-`http://[LOAD_BALANCER_IP]`
+
+### Endpoints Disponibles
+    Estado del Servidor
+        ```http
+        GET /status
+        ```
+
+        **Response:**
+        ```text
+        El servidor está vivo
+        Estado: LÍDER - Ejecutando scraper
+        ```
+
+    Lista de Criptomonedas
+        ```http
+        GET /api/cryptos
+        ```
+
+        **Response:**
+        ```json
+        {
+        "status": "success",
+        "data": [
+            {
+            "id": 1,
+            "symbol": "BTC",
+            "name": "Bitcoin"
+            },
+            {
+            "id": 2,
+            "symbol": "ETH",
+            "name": "Ethereum"
+            },
+            // ... etc
+        ]
+        }
+        ```
+
+    Precios Actuales
+        ```http
+        GET /api/prices/current
+        ```
+
+        **Response:**
+        ```json
+        {
+        "status": "success",
+        "data": [
+            {
+            "id": 1,
+            "symbol": "BTC",
+            "name": "Bitcoin",
+            "price": 102605.50,
+            "timestamp": "2025-06-26 10:30:00"
+            },
+            {
+            "id": 2,
+            "symbol": "ETH",
+            "name": "Ethereum",
+            "price": 2479.45,
+            "timestamp": "2025-06-26 10:30:00"
+            },
+            // ... encontrado
+        ],
+        "count": 10
+        }
+        ```
+
+    Historial de Precios
+        ```http
+        GET /api/prices/history?crypto_id={id}&hours={hours}
+        ```
+
+        **Parámetros:**
+        - `crypto_id` (requerido): ID de la criptomoneda (1-10)
+        - `hours` (opcional): Número de horas hacia atrás (1-24, default: 24)
+
+        **Ejemplo:**
+        ```http
+        GET /api/prices/history?crypto_id=1&hours=3
+        ```
+
+        **Response:**
+        ```json
+        {
+        "status": "success",
+        "crypto_id": 1,
+        "symbol": "BTC",
+        "name": "Bitcoin",
+        "hours": 3,
+        "data": [
+            {
+            "price": 102000.50,
+            "timestamp": "2025-06-26 07:30:00"
+            },
+            {
+            "price": 102100.25,
+            "timestamp": "2025-06-26 07:31:00"
+            },
+            // ... etc
+        ],
+        "count": 180
+        }
+        ```
+
+### Testing con cURL
+
+# 1. Estatus
+curl -X GET http://34.56.65.161:80/status
+
+# 2. Lista de criptomonedas
+curl -X GET http://34.56.65.161:80/cryptos
+
+# 3. Precios actuales
+curl -X GET http://34.56.65.161:80/prices/current
+
+# 4. Historial de Bitcoin (últimas 3 horas)
+curl -X GET "http://34.56.65.161:80/prices/history?crypto_id=1&hours=3"
+
+### Debugging y Logs
+
+Los prints agregados mostrarán:
+- Cada petición recibida
+- Parámetros procesados
+- Datos recuperados de la BD
+- Respuestas enviadas
