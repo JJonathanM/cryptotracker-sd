@@ -14,12 +14,24 @@ const CurrentPrices: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
+  // Función para restar 6 horas al timestamp de la API
+  const adjustTimeToMexico = (apiTimestamp: string): string => {
+    const date = new Date(apiTimestamp);
+    // Restamos 6 horas (en milisegundos)
+    date.setHours(date.getHours() - 6);
+    
+    // Formateamos de vuelta al mismo formato que viene de la API pero con la hora ajustada
+    const pad = (num: number) => num.toString().padStart(2, '0');
+    const ms = apiTimestamp.split('.')[1] || '000'; // Mantenemos los milisegundos si existen
+    
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
+           `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${ms}`;
+  };
+
   // Estrategia de múltiples fuentes para imágenes con fallbacks
   const getCryptoImage = (symbol: string, name: string): string => {
     const symbolLower = symbol.toLowerCase();
-    const nameLower = name.toLowerCase().replace(/\s+/g, '-');
     
-    // 1. Intento con CoinGecko CDN
     const coingeckoImages: Record<string, string> = {
       'BTC': 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
       'ETH': 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
@@ -28,17 +40,13 @@ const CurrentPrices: React.FC = () => {
       'TRX': 'https://assets.coingecko.com/coins/images/1094/large/tron-logo.png',
       'DOGE': 'https://assets.coingecko.com/coins/images/5/large/dogecoin.png',
       'ADA': 'https://assets.coingecko.com/coins/images/975/large/cardano.png',
+      'HYPE': 'https://assets.coingecko.com/coins/images/39593/large/Hyperliquid.png',
       'BCH': 'https://assets.coingecko.com/coins/images/780/large/bitcoin-cash-circle.png',
       'LINK': 'https://assets.coingecko.com/coins/images/877/large/chainlink-new-logo.png'
     };
 
-    // 2. Intento con CryptoIcons (alternativa a CoinGecko)
     const cryptoIconsUrl = `https://cryptoicons.org/api/icon/${symbolLower}/200`;
-    
-    // 3. Intento con placeholder generado dinámicamente
     const placeholderUrl = `https://ui-avatars.com/api/?name=${symbol}&background=random&color=fff&rounded=true&size=32`;
-    
-    // 4. Imagen genérica local como último recurso
     const localFallback = '/images/crypto/generic.png';
 
     return coingeckoImages[symbol] || cryptoIconsUrl || placeholderUrl || localFallback;
@@ -86,7 +94,9 @@ const CurrentPrices: React.FC = () => {
         setPrices(data.data);
         
         if (data.data.length > 0) {
-          setLastUpdated(new Date(data.data[0].timestamp).toLocaleString());
+          // Aplicamos el ajuste de hora aquí
+          const adjustedTime = adjustTimeToMexico(data.data[0].timestamp);
+          setLastUpdated(adjustedTime);
         }
         
         setLoading(false);
