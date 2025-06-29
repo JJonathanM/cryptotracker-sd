@@ -77,7 +77,7 @@ const CurrentPrices: React.FC = () => {
   useEffect(() => {
     const fetchPrices = async () => {
       try {
-        const response = await fetch('http://34.56.65.161/prices/current');
+        const response = await fetch('http://34.95.126.189/prices/current');
         if (!response.ok) throw new Error(`Error: ${response.status}`);
         
         const data = await response.json();

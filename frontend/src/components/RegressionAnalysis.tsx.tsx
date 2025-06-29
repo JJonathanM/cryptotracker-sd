@@ -44,7 +44,7 @@ const RegressionAnalysis: React.FC = () => {
     // Cargar la lista de criptomonedas
     const fetchCryptos = async () => {
       try {
-        const response = await fetch('http://34.56.65.161/cryptos');
+        const response = await fetch('http://34.95.126.189/cryptos');
         const data = await response.json();
         if (data.status === 'success') {
           setCryptos(data.data);
@@ -65,7 +65,7 @@ const RegressionAnalysis: React.FC = () => {
     
     try {
       const response = await fetch(
-        `http://34.56.65.161/prices/regression/?crypto_id=${crypto}&hours=${hours}`
+        `http://34.95.126.189/prices/regression/?crypto_id=${crypto}&hours=${hours}`
       );
       const data: ApiResponse = await response.json();
       
