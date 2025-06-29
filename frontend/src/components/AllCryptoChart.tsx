@@ -1,67 +1,57 @@
-import { FC, useState, useEffect } from 'react';
-import mockData from '../mockData.json';
+import React, { useState } from 'react';
 
-const AllCryptoChart: FC = () => {
-  const [hours, setHours] = useState<number>(24);
-  const [chartData, setChartData] = useState<any>(null);
+const AllCryptoChart: React.FC = () => {
+  const [hours, setHours] = useState<number>(6);
+  const [chartUrl, setChartUrl] = useState<string>('');
 
-  useEffect(() => {
-    // Simular llamada a la API con filtros
-    const allData = mockData.currentPrices.map(crypto => ({
-      crypto,
-      data: (mockData.historicalData[crypto.symbol as keyof typeof mockData.historicalData] || [])
-        .filter((item: any) => {
-          const now = new Date();
-          const itemDate = new Date(item.price_time);
-          return (now.getTime() - itemDate.getTime()) <= hours * 60 * 60 * 1000;
-        })
-    }));
-
-    setChartData(allData);
-  }, [hours]);
+  const generateChart = () => {
+    // Aquí iría la llamada a tu API de Java para generar el gráfico
+    // const response = await fetch(`tu-api/chart/all?hours=${hours}`);
+    // const data = await response.json();
+    
+    // Simulando la URL de la imagen del gráfico generado
+    const mockChartUrl = `https://via.placeholder.com/800x400.png?text=Gráfico+de+todas+las+criptos+últimas+${hours}+horas`;
+    setChartUrl(mockChartUrl);
+  };
 
   return (
-    <div className="box">
-      <h2 className="title is-2">Gráfico de Todas las Criptomonedas</h2>
+    <div className="container">
+      <h4 className="center">Gráfico de Todas las Criptomonedas</h4>
       
-      <div className="field is-horizontal">
-        <div className="field-label is-normal">
-          <label className="label">Horas</label>
-        </div>
-        <div className="field-body">
-          <div className="field">
-            <div className="control">
-              <input 
-                className="input" 
-                type="number" 
-                min="1" 
-                max="24" 
-                value={hours}
-                onChange={(e) => setHours(parseInt(e.target.value))}
-              />
-            </div>
-          </div>
+      <div className="row">
+        <div className="input-field col s12 m6 offset-m3">
+          <input 
+            type="number" 
+            min="1" 
+            max="24" 
+            value={hours} 
+            onChange={(e) => setHours(parseInt(e.target.value))}
+            className="validate"
+          />
+          <label htmlFor="hours">Horas (1-24)</label>
         </div>
       </div>
-
-      <div className="chart-container">
-        {chartData ? (
-          <div className="has-text-centered">
-            <figure className="image is-16by9">
-              {/* Aquí iría el gráfico generado por un microservicio */}
-              <img 
-                src={`https://dummyimage.com/800x450/363636/ffffff&text=Gráfico+de+todas+las+criptos+últimas+${hours}+horas`} 
-                alt="Gráfico de todas las criptomonedas"
-              />
-            </figure>
-            <div className="content mt-4">
-              <p>Mostrando datos de todas las criptomonedas para las últimas {hours} horas.</p>
-            </div>
-          </div>
-        ) : (
-          <p>Cargando datos...</p>
-        )}
+      
+      <div className="center">
+        <button 
+          onClick={generateChart}
+          className="btn waves-effect waves-light blue"
+        >
+          Generar Gráfico
+        </button>
       </div>
+      
+      {chartUrl && (
+        <div className="row">
+          <div className="col s12">
+            <img 
+              src={chartUrl} 
+              alt="Gráfico de todas las criptomonedas" 
+              style={{ width: '100%', marginTop: '20px' }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

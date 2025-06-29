@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
-const SingleCryptoChart: React.FC = () => {
-  const [crypto, setCrypto] = useState<string>('bitcoin');
+const CombinedChart: React.FC = () => {
+  const [selectedCryptos, setSelectedCryptos] = useState<string[]>(['bitcoin', 'ethereum']);
   const [hours, setHours] = useState<number>(6);
   const [chartUrl, setChartUrl] = useState<string>('');
 
@@ -18,31 +18,47 @@ const SingleCryptoChart: React.FC = () => {
     { id: 'chainlink', name: 'Chainlink' },
   ];
 
+  const toggleCrypto = (cryptoId: string) => {
+    if (selectedCryptos.includes(cryptoId)) {
+      setSelectedCryptos(selectedCryptos.filter(id => id !== cryptoId));
+    } else {
+      setSelectedCryptos([...selectedCryptos, cryptoId]);
+    }
+  };
+
   const generateChart = () => {
+    if (selectedCryptos.length === 0) {
+      alert('Selecciona al menos una criptomoneda');
+      return;
+    }
+    
     // Aquí iría la llamada a tu API de Java para generar el gráfico
-    // const response = await fetch(`tu-api/chart/single?crypto=${crypto}&hours=${hours}`);
+    // const response = await fetch(`tu-api/chart/combined?cryptos=${selectedCryptos.join(',')}&hours=${hours}`);
     // const data = await response.json();
     
     // Simulando la URL de la imagen del gráfico generado
-    const mockChartUrl = `https://via.placeholder.com/800x400.png?text=Gráfico+de+${crypto}+últimas+${hours}+horas`;
+    const mockChartUrl = `https://via.placeholder.com/800x400.png?text=Gráfico+combinado+de+${selectedCryptos.length}+criptos+últimas+${hours}+horas`;
     setChartUrl(mockChartUrl);
   };
 
   return (
-    <div className='container'>
-      <h4 className="center">Gráfico Individual de Criptomoneda</h4>
+    <div className="container">
+      <h4 className="center">Gráfico Combinado de Criptomonedas</h4>
       
       <div className="row">
-        <div className="input-field col s12 m6">
-          <select 
-            value={crypto} 
-            onChange={(e) => setCrypto(e.target.value)}
-            className="browser-default"
-          >
-            {cryptos.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+        <div className="col s12">
+          <h5>Selecciona las criptomonedas:</h5>
+          {cryptos.map((crypto) => (
+            <label key={crypto.id} style={{ marginRight: '15px', display: 'inline-block' }}>
+              <input
+                type="checkbox"
+                checked={selectedCryptos.includes(crypto.id)}
+                onChange={() => toggleCrypto(crypto.id)}
+                className="filled-in"
+              />
+              <span>{crypto.name}</span>
+            </label>
+          ))}
         </div>
         
         <div className="input-field col s12 m6">
@@ -72,7 +88,7 @@ const SingleCryptoChart: React.FC = () => {
           <div className="col s12">
             <img 
               src={chartUrl} 
-              alt={`Gráfico de ${crypto}`} 
+              alt="Gráfico combinado de criptomonedas" 
               style={{ width: '100%', marginTop: '20px' }}
             />
           </div>
@@ -82,4 +98,4 @@ const SingleCryptoChart: React.FC = () => {
   );
 };
 
-export default SingleCryptoChart;
+export default CombinedChart;

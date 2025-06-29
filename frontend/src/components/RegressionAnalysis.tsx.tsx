@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 
-const SingleCryptoChart: React.FC = () => {
+const RegressionAnalysis: React.FC = () => {
   const [crypto, setCrypto] = useState<string>('bitcoin');
   const [hours, setHours] = useState<number>(6);
-  const [chartUrl, setChartUrl] = useState<string>('');
+  const [analysis, setAnalysis] = useState<{equation: string, chartUrl: string} | null>(null);
 
   const cryptos = [
     { id: 'bitcoin', name: 'Bitcoin' },
@@ -18,19 +18,23 @@ const SingleCryptoChart: React.FC = () => {
     { id: 'chainlink', name: 'Chainlink' },
   ];
 
-  const generateChart = () => {
-    // Aquí iría la llamada a tu API de Java para generar el gráfico
-    // const response = await fetch(`tu-api/chart/single?crypto=${crypto}&hours=${hours}`);
+  const generateAnalysis = () => {
+    // Aquí iría la llamada a tu API de Java para generar el análisis
+    // const response = await fetch(`tu-api/regression?crypto=${crypto}&hours=${hours}`);
     // const data = await response.json();
     
-    // Simulando la URL de la imagen del gráfico generado
-    const mockChartUrl = `https://via.placeholder.com/800x400.png?text=Gráfico+de+${crypto}+últimas+${hours}+horas`;
-    setChartUrl(mockChartUrl);
+    // Simulando la respuesta de la API
+    const mockAnalysis = {
+      equation: `y = ${(Math.random() * 2 - 1).toFixed(2)}x + ${(Math.random() * 10000).toFixed(2)}`,
+      chartUrl: `https://via.placeholder.com/800x400.png?text=Regresión+de+${crypto}+últimas+${hours}+horas`
+    };
+    
+    setAnalysis(mockAnalysis);
   };
 
   return (
-    <div className='container'>
-      <h4 className="center">Gráfico Individual de Criptomoneda</h4>
+    <div className="container">
+      <h4 className="center">Análisis de Regresión Lineal</h4>
       
       <div className="row">
         <div className="input-field col s12 m6">
@@ -60,20 +64,26 @@ const SingleCryptoChart: React.FC = () => {
       
       <div className="center">
         <button 
-          onClick={generateChart}
+          onClick={generateAnalysis}
           className="btn waves-effect waves-light blue"
         >
-          Generar Gráfico
+          Generar Análisis
         </button>
       </div>
       
-      {chartUrl && (
+      {analysis && (
         <div className="row">
           <div className="col s12">
+            <h5>Ecuación de regresión lineal:</h5>
+            <div className="card-panel teal lighten-2 white-text">
+              <code style={{ fontSize: '1.2em' }}>{analysis.equation}</code>
+            </div>
+            
+            <h5>Gráfico de regresión:</h5>
             <img 
-              src={chartUrl} 
-              alt={`Gráfico de ${crypto}`} 
-              style={{ width: '100%', marginTop: '20px' }}
+              src={analysis.chartUrl} 
+              alt={`Gráfico de regresión de ${crypto}`} 
+              style={{ width: '100%', marginTop: '10px' }}
             />
           </div>
         </div>
@@ -82,4 +92,4 @@ const SingleCryptoChart: React.FC = () => {
   );
 };
 
-export default SingleCryptoChart;
+export default RegressionAnalysis;
