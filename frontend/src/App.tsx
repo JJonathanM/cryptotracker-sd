@@ -10,6 +10,7 @@ import Navbar from './components/Navbar';
 import 'materialize-css/dist/css/materialize.min.css';
 import "./styles/main.css"
 import Footer from "./components/Footer.tsx";
+import ChartsDashboard from './components/ChartsDashboard.tsx';
 
 const App: React.FC = () => {
   return (
@@ -44,6 +45,7 @@ const App: React.FC = () => {
               <Route path="/all-cryptos-chart" element={<AllCryptosChart />} />
               <Route path="/combined-chart" element={<CombinedChart />} />
               <Route path="/regression-analysis" element={<RegressionAnalysis />} />
+              <Route path='/ChartDashboard' element={<ChartsDashboard/>}/>
             </Routes>
           </div>
         </main>

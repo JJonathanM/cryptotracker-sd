@@ -18,19 +18,15 @@ const SingleCryptoChart: React.FC = () => {
     { id: 'chainlink', name: 'Chainlink' },
   ];
 
-  const generateChart = () => {
-    // Aquí iría la llamada a tu API de Java para generar el gráfico
-    // const response = await fetch(`tu-api/chart/single?crypto=${crypto}&hours=${hours}`);
-    // const data = await response.json();
-    
+  const generateChart = () => { 
     // Simulando la URL de la imagen del gráfico generado
-    const mockChartUrl = `https://via.placeholder.com/800x400.png?text=Gráfico+de+${crypto}+últimas+${hours}+horas`;
+    const mockChartUrl = `https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.jaspersoft.com%2Fes%2Farticles%2Fwhat-is-a-line-chart&psig=AOvVaw1FpRzHhri84dHaWGjCpbn4&ust=1751251267139000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCOjZ-r7NlY4DFQAAAAAdAAAAABAE`;
     setChartUrl(mockChartUrl);
   };
 
   return (
     <div className='container black-text'>
-      <h4 className="center black-text  ">Gráfico Individual de Criptomoneda</h4>
+      <h5 className="center black-text  ">Gráfico Individual de Criptomoneda</h5>
       
       <div className="row ">
         <div className="input-field col s12 m6 ">

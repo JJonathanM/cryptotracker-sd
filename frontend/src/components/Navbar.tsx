@@ -21,9 +21,7 @@ const Navbar: React.FC = () => {
         </Link>
         <ul id="nav-mobile" className="right hide-on-med-and-down">
           <li><Link to="/current-prices">Precios Actuales</Link></li>
-          <li><Link to="/single-crypto-chart">Gráfico Individual</Link></li>
-          <li><Link to="/all-cryptos-chart">Gráfico de Todas</Link></li>
-          <li><Link to="/combined-chart">Gráfico Combinado</Link></li>
+          <li><Link to="/ChartDashboard">Gráfico de precios</Link></li>
           <li><Link to="/regression-analysis">Análisis de Regresión</Link></li>
         </ul>
       </div>

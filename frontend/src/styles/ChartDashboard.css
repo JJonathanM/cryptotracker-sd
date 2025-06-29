@@ -1,0 +1,30 @@
+/* Estilos para el panel de gráficos */
+.tabs {
+  overflow-x: auto;
+}
+
+.tabs .tab a {
+  color: #6a1b9a; /* Usa tu color personalizado */
+  font-weight: 500;
+}
+
+.tabs .tab a:hover {
+  color: #9c4dcc; /* Color más claro para hover */
+}
+
+.tabs .tab a.active {
+  color: #6a1b9a;
+  border-bottom: 3px solid #6a1b9a;
+}
+
+.tabs .indicator {
+  background-color: #6a1b9a;
+}
+
+.chart-container {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
