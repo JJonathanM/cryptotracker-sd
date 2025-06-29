@@ -1,265 +1,326 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
-interface CryptoData {
-  symbol: string;
-  price: number;
+interface Crypto {
+  id: number;
   name: string;
-  crypto_id: number;
+  symbol: string;
+  color: string;
+}
+
+interface PriceData {
+  price: number;
   timestamp: string;
 }
 
 interface ApiResponse {
-  crypto_count: number;
+  data: PriceData[];
+  name: string;
+  symbol: string;
+  status: string;
   hours: number;
-  data: {
-    [key: string]: CryptoData[];
-  };
+  count: number;
 }
 
 const AllCryptoChart: React.FC = () => {
-  const [hours, setHours] = useState<number>(6);
-  const [chartData, setChartData] = useState<ApiResponse | null>(null);
+  const [cryptos, setCryptos] = useState<Crypto[]>([]);
+  const [selectedCryptos, setSelectedCryptos] = useState<string[]>(['1']);
+  const [hours, setHours] = useState<number>(24);
+  const [priceData, setPriceData] = useState<Record<string, PriceData[]>>({});
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string>('');
+  
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`http://34.95.126.189/prices/all-cryptos?hours=${hours}`);
-      if (!response.ok) {
-        throw new Error('Error al obtener los datos');
+  // Colores para las diferentes criptomonedas
+  const cryptoColors = [
+    '#4285F4', '#EA4335', '#FBBC05', '#34A853', '#673AB7',
+    '#FF5722', '#009688', '#E91E63', '#795548', '#607D8B'
+  ];
+
+  useEffect(() => {
+    const fetchCryptos = async () => {
+      try {
+        const response = await fetch('http://34.95.126.189/cryptos');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          const cryptosWithColors = data.data.map((c: Crypto, index: number) => ({
+            ...c,
+            color: cryptoColors[index % cryptoColors.length]
+          }));
+          setCryptos(cryptosWithColors);
+        } else {
+          setError('Error al cargar las criptomonedas');
+        }
+      } catch (err) {
+        setError('Error de conexión al servidor');
       }
-      const data: ApiResponse = await response.json();
-      setChartData(data);
+    };
+    
+    fetchCryptos();
+  }, []);
+
+  // Obtener datos de precios cuando cambian las criptomonedas seleccionadas o las horas
+  useEffect(() => {
+    if (selectedCryptos.length > 0 && hours > 0) {
+      fetchAllPriceData();
+    }
+  }, [selectedCryptos, hours]);
+
+  // Dibujar el gráfico cuando cambian los datos
+  useEffect(() => {
+    if (Object.keys(priceData).length > 0 && canvasRef.current) {
+      drawChart();
+    }
+  }, [priceData]);
+
+  const fetchAllPriceData = async () => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      const promises = selectedCryptos.map(async (cryptoId) => {
+        const response = await fetch(
+          `http://34.95.126.189/prices/history/?crypto_id=${cryptoId}&hours=${hours}`
+        );
+        return response.json();
+      });
+
+      const results = await Promise.all(promises);
+      
+      const newPriceData: Record<string, PriceData[]> = {};
+      results.forEach((result: ApiResponse, index) => {
+        if (result.status === 'success') {
+          newPriceData[selectedCryptos[index]] = result.data;
+        }
+      });
+
+      setPriceData(newPriceData);
+      
+      if (Object.keys(newPriceData).length === 0) {
+        setError('Error al cargar los datos del gráfico');
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError('Error de conexión al servidor');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleHoursChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    if (!isNaN(value) && value >= 1 && value <= 24) {
-      setHours(value);
+  const handleCryptoSelection = (cryptoId: string) => {
+    if (selectedCryptos.includes(cryptoId)) {
+      // Si ya está seleccionada, la quitamos
+      setSelectedCryptos(selectedCryptos.filter(id => id !== cryptoId));
+    } else {
+      // Si no está seleccionada, la agregamos
+      setSelectedCryptos([...selectedCryptos, cryptoId]);
     }
   };
 
-  // Opcional: cargar datos automáticamente al cambiar las horas
-  useEffect(() => {
-    fetchData();
-  }, [hours]);
-
-  const renderChart = () => {
-    if (!chartData || !chartData.data) return null;
-
-    const cryptos = Object.keys(chartData.data);
-    if (cryptos.length === 0) return <p>No hay datos disponibles</p>;
-
-    // Configuración del gráfico
-    const width = 800;
-    const height = 400;
-    const margin = { top: 20, right: 30, bottom: 50, left: 60 };
-    const innerWidth = width - margin.left - margin.right;
-    const innerHeight = height - margin.top - margin.bottom;
-
-    // Procesamiento de datos
-    const allDataPoints = cryptos.flatMap(crypto => 
-      chartData.data[crypto].map(d => ({
-        ...d,
-        date: new Date(d.timestamp),
-        cryptoName: d.name
-      }))
-    );
-
-    if (allDataPoints.length === 0) return <p>No hay puntos de datos</p>;
-
-    // Encontrar mínimos y máximos para la escala
-    const minTime = new Date(Math.min(...allDataPoints.map(d => d.date.getTime())));
-    const maxTime = new Date(Math.max(...allDataPoints.map(d => d.date.getTime())));
-    const minPrice = Math.min(...allDataPoints.map(d => d.price));
-    const maxPrice = Math.max(...allDataPoints.map(d => d.price));
-
-    // Funciones de escala
-    const xScale = (date: Date) => 
-      margin.left + innerWidth * ((date.getTime() - minTime.getTime()) / (maxTime.getTime() - minTime.getTime()));
-    
-    const yScale = (price: number) => 
-      margin.top + innerHeight - innerHeight * ((price - minPrice) / (maxPrice - minPrice));
-
-    // Colores para cada cripto
-    const colors = [
-      '#3366cc', '#dc3912', '#ff9900', '#109618', '#990099', 
-      '#0099c6', '#dd4477', '#66aa00', '#b82e2e', '#316395'
-    ];
-
-    // Crear líneas para cada criptomoneda
-    const lines = cryptos.map((crypto, i) => {
-      const cryptoData = chartData.data[crypto]
-        .map(d => ({ ...d, date: new Date(d.timestamp) }))
-        .sort((a, b) => a.date.getTime() - b.date.getTime());
-
-      const points = cryptoData.map(d => `${xScale(d.date)},${yScale(d.price)}`).join(' ');
-
-      return (
-        <polyline
-          key={crypto}
-          points={points}
-          fill="none"
-          stroke={colors[i % colors.length]}
-          strokeWidth="2"
-        />
-      );
-    });
-
-    // Crear ejes
-    const timeTicks = [];
-    const priceTicks = [];
-    const numTicks = 5;
-
-    for (let i = 0; i < numTicks; i++) {
-      const time = new Date(minTime.getTime() + i * (maxTime.getTime() - minTime.getTime()) / (numTicks - 1));
-      timeTicks.push(
-        <g key={`time-${i}`}>
-          <line
-            x1={xScale(time)}
-            y1={margin.top + innerHeight}
-            x2={xScale(time)}
-            y2={margin.top + innerHeight + 5}
-            stroke="black"
-          />
-          <text
-            x={xScale(time)}
-            y={margin.top + innerHeight + 20}
-            textAnchor="middle"
-            fontSize="12"
-          >
-            {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </text>
-        </g>
-      );
-
-      const price = minPrice + i * (maxPrice - minPrice) / (numTicks - 1);
-      priceTicks.push(
-        <g key={`price-${i}`}>
-          <line
-            x1={margin.left - 5}
-            y1={yScale(price)}
-            x2={margin.left}
-            y2={yScale(price)}
-            stroke="black"
-          />
-          <text
-            x={margin.left - 10}
-            y={yScale(price)}
-            textAnchor="end"
-            dominantBaseline="middle"
-            fontSize="12"
-          >
-            {price.toFixed(2)}
-          </text>
-        </g>
-      );
+  const toggleSelectAll = () => {
+    if (selectedCryptos.length === cryptos.length) {
+      // Si todas están seleccionadas, deseleccionar todas
+      setSelectedCryptos([]);
+    } else {
+      // Si no, seleccionar todas
+      setSelectedCryptos(cryptos.map(crypto => crypto.id.toString()));
     }
+  };
 
-    // Leyenda
-    const legend = cryptos.map((crypto, i) => {
-      const firstData = chartData.data[crypto][0];
-      return (
-        <g key={`legend-${crypto}`} transform={`translate(${width - 150}, ${20 + i * 20})`}>
-          <rect width="15" height="2" fill={colors[i % colors.length]} y="9" />
-          <text x="20" y="10" fontSize="12" dominantBaseline="middle">
-            {firstData.name} ({firstData.symbol})
-          </text>
-        </g>
-      );
+  const drawChart = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || Object.keys(priceData).length === 0) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Limpiar el canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Configuración del gráfico
+    const padding = 50;
+    const width = canvas.width - padding * 2;
+    const height = canvas.height - padding * 2;
+    
+    // Encontrar valores mínimos y máximos para escalar el gráfico (entre todas las criptos)
+    let minPrice = Infinity;
+    let maxPrice = -Infinity;
+    let minTime = Infinity;
+    let maxTime = -Infinity;
+
+    Object.values(priceData).forEach(data => {
+      const prices = data.map(d => d.price);
+      const currentMin = Math.min(...prices);
+      const currentMax = Math.max(...prices);
+      
+      const timestamps = data.map(d => new Date(d.timestamp).getTime());
+      const currentMinTime = Math.min(...timestamps);
+      const currentMaxTime = Math.max(...timestamps);
+
+      if (currentMin < minPrice) minPrice = currentMin;
+      if (currentMax > maxPrice) maxPrice = currentMax;
+      if (currentMinTime < minTime) minTime = currentMinTime;
+      if (currentMaxTime > maxTime) maxTime = currentMaxTime;
     });
 
-    return (
-      <div style={{ overflowX: 'auto' }}>
-        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-          {/* Eje X (tiempo) */}
-          <line
-            x1={margin.left}
-            y1={margin.top + innerHeight}
-            x2={margin.left + innerWidth}
-            y2={margin.top + innerHeight}
-            stroke="black"
-          />
-          {timeTicks}
-
-          {/* Eje Y (precio) */}
-          <line
-            x1={margin.left}
-            y1={margin.top}
-            x2={margin.left}
-            y2={margin.top + innerHeight}
-            stroke="black"
-          />
-          {priceTicks}
-
-          {/* Líneas del gráfico */}
-          {lines}
-
-          {/* Leyenda */}
-          {legend}
-
-          {/* Títulos */}
-          <text
-            x={margin.left + innerWidth / 2}
-            y={height - 10}
-            textAnchor="middle"
-            fontSize="14"
-          >
-            Tiempo
-          </text>
-          <text
-            x={10}
-            y={height / 2}
-            textAnchor="middle"
-            fontSize="14"
-            transform={`rotate(-90, 10, ${height / 2})`}
-          >
-            Precio
-          </text>
-        </svg>
-      </div>
-    );
+    const priceRange = maxPrice - minPrice;
+    const timeRange = maxTime - minTime;
+    
+    // Dibujar ejes
+    ctx.beginPath();
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1;
+    
+    // Eje Y
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, height + padding);
+    
+    // Eje X
+    ctx.lineTo(width + padding, height + padding);
+    ctx.stroke();
+    
+    // Dibujar líneas de guía y etiquetas
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#000';
+    ctx.font = '10px Arial';
+    
+    // Marcadores del eje Y
+    const ySteps = 5;
+    for (let i = 0; i <= ySteps; i++) {
+      const y = padding + height - (i / ySteps) * height;
+      const value = minPrice + (i / ySteps) * priceRange;
+      
+      ctx.beginPath();
+      ctx.moveTo(padding - 5, y);
+      ctx.lineTo(padding, y);
+      ctx.stroke();
+      
+      ctx.fillText(value.toFixed(2), padding - 10, y + 4);
+    }
+    
+    // Marcadores del eje X (solo algunos para no saturar)
+    // Tomamos la primera cripto como referencia para los tiempos
+    const firstCryptoData = Object.values(priceData)[0];
+    const xSteps = Math.min(5, firstCryptoData.length);
+    for (let i = 0; i <= xSteps; i++) {
+      const index = Math.floor((i / xSteps) * (firstCryptoData.length - 1));
+      const x = padding + (i / xSteps) * width;
+      const date = new Date(firstCryptoData[index].timestamp);
+      const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      ctx.beginPath();
+      ctx.moveTo(x, height + padding);
+      ctx.lineTo(x, height + padding + 5);
+      ctx.stroke();
+      
+      ctx.textAlign = 'center';
+      ctx.fillText(timeStr, x, height + padding + 20);
+    }
+    
+    // Dibujar las líneas de cada criptomoneda
+    Object.entries(priceData).forEach(([cryptoId, data]) => {
+      if (data.length === 0) return;
+      
+      const cryptoInfo = cryptos.find(c => c.id.toString() === cryptoId);
+      const color = cryptoInfo?.color || '#000';
+      
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      
+      data.forEach((point, index) => {
+        const date = new Date(point.timestamp);
+        const x = padding + ((date.getTime() - minTime) / timeRange) * width;
+        const y = padding + height - ((point.price - minPrice) / priceRange) * height;
+        
+        if (index === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+      
+      ctx.stroke();
+    });
+    
+    // Título del gráfico
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 14px Arial';
+    ctx.fillText(`Comparación de criptomonedas - Últimas ${hours} horas`, canvas.width / 2, 20);
+    
+    // Leyenda
+    const legendX = canvas.width - 150;
+    let legendY = 30;
+    
+    Object.entries(priceData).forEach(([cryptoId]) => {
+      const cryptoInfo = cryptos.find(c => c.id.toString() === cryptoId);
+      if (!cryptoInfo) return;
+      
+      ctx.fillStyle = cryptoInfo.color;
+      ctx.fillRect(legendX, legendY, 15, 15);
+      
+      ctx.fillStyle = '#000';
+      ctx.textAlign = 'left';
+      ctx.fillText(`${cryptoInfo.name} (${cryptoInfo.symbol})`, legendX + 20, legendY + 12);
+      
+      legendY += 20;
+    });
   };
 
   return (
-    <div className="container">
+    <div className='container black-text'>    
       <div className="row">
-        <div className="col s12 m8 offset-m2">
-          <form action="#">
-            <p className="range-field">
-              <label>Horas: {hours}h</label>
+        <div className="input-field col s12 m6">
+          <div className="crypto-selection">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label>Selecciona criptomonedas:</label>
+              <button 
+                onClick={toggleSelectAll}
+                className="btn waves-effect waves-light blue"
+                style={{ padding: '0 10px', lineHeight: '30px', height: '30px', fontSize: '12px' }}
+              >
+                {selectedCryptos.length === cryptos.length ? 'Deseleccionar todas' : 'Seleccionar todas'}
+              </button>
+            </div>
+            <div className="crypto-checkboxes" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+              {cryptos.map((crypto) => (
+                <label key={crypto.id} className="checkbox-label" style={{ display: 'block', margin: '5px 0' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedCryptos.includes(crypto.id.toString())}
+                    onChange={() => handleCryptoSelection(crypto.id.toString())}
+                    disabled={loading}
+                    style={{ marginRight: '10px' }}
+                  />
+                  <span style={{ color: crypto.color }}>
+                    {crypto.name} ({crypto.symbol})
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        <div className="input-field col s12 m6">
+          <div className="range-field">
+            <p className="range-field black-text">
+              <label>Rango de horas: {hours}h</label>
               <input 
                 type="range" 
                 min="1" 
                 max="24" 
-                value={hours} 
-                onChange={handleHoursChange}
+                value={hours}
+                onChange={(e) => setHours(parseInt(e.target.value))}
+                disabled={loading}
               />
             </p>
-          </form>
+          </div>
         </div>
-      </div>
-      
-      <div className="center">
-        <button 
-          onClick={fetchData}
-          className="btn waves-effect waves-light blue"
-          disabled={loading}
-        >
-          {loading ? 'Cargando...' : 'Generar Gráfico'}
-        </button>
       </div>
       
       {error && (
         <div className="row">
-          <div className="col s12 center red-text">
+          <div className="col s12 red-text">
             {error}
           </div>
         </div>
@@ -267,9 +328,20 @@ const AllCryptoChart: React.FC = () => {
       
       <div className="row">
         <div className="col s12">
-          {renderChart()}
+          <canvas 
+            ref={canvasRef} 
+            width={800} 
+            height={500}
+            style={{ width: '100%', maxWidth: '800px', border: '1px solid #ddd' }}
+          />
         </div>
       </div>
+      
+      {loading && (
+        <div className="progress">
+          <div className="indeterminate"></div>
+        </div>
+      )}
     </div>
   );
 };
