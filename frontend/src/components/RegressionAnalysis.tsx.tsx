@@ -36,6 +36,7 @@ const RegressionAnalysis: React.FC = () => {
   const [crypto, setCrypto] = useState<string>('1');
   const [hours, setHours] = useState<number>(6);
   const [analysis, setAnalysis] = useState<ApiResponse | null>(null);
+  const [filteredData, setFilteredData] = useState<PriceData[]>([]);
   const [cryptos, setCryptos] = useState<Crypto[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +59,18 @@ const RegressionAnalysis: React.FC = () => {
 
     fetchCryptos();
   }, []);
+
+  // Filtrar datos cuando cambia el análisis o las horas
+  useEffect(() => {
+    if (analysis) {
+      const now = Date.now();
+      const milliseconds = hours * 60 * 60 * 1000;
+      const filtered = analysis.data.filter(point => 
+        now - point.timestamp_unix * 1000 <= milliseconds
+      );
+      setFilteredData(filtered);
+    }
+  }, [analysis, hours]);
 
   const generateAnalysis = async () => {
     setLoading(true);
@@ -253,11 +266,12 @@ const RegressionAnalysis: React.FC = () => {
             <div className="card-panel blue-custom white-text">
               <code style={{ fontSize: '1.2em' }}>{analysis.regression.equation}</code>
               <p>R² = {analysis.regression.r_squared.toFixed(4)}</p>
+              <p>Datos mostrados: últimas {hours} horas ({filteredData.length} puntos)</p>
             </div>
             
             <h5>Gráfico de regresión:</h5>
             <div className="card-panel">
-              {renderChart(analysis.data)}
+              {renderChart(filteredData)}
             </div>
           </div>
         </div>
