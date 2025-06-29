@@ -9,6 +9,7 @@ import RegressionAnalysis from './components/RegressionAnalysis.tsx';
 import Navbar from './components/Navbar';
 import 'materialize-css/dist/css/materialize.min.css';
 import "./styles/main.css"
+import Footer from "./components/Footer.tsx";
 
 const App: React.FC = () => {
   return (
@@ -52,9 +53,7 @@ const App: React.FC = () => {
           flexShrink: 0,
           marginTop: 'auto'
         }}>
-          <div className="container grey-text text-darken-1">
-            © {new Date().getFullYear()} CryptoTracker
-          </div>
+          <Footer/>
         </footer>
       </div>
     </Router>
