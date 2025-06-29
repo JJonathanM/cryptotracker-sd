@@ -1,238 +1,246 @@
 import React, { useState, useEffect } from 'react';
 
-interface Crypto {
-  id: number;
+interface CryptoData {
   symbol: string;
-  name: string;
-}
-
-interface PriceData {
-  timestamp_unix: number;
   price: number;
+  name: string;
+  crypto_id: number;
   timestamp: string;
 }
 
-interface RegressionData {
-  data_points: number;
-  intercept: number;
-  equation: string;
-  slope: number;
-  r_squared: number;
-}
-
 interface ApiResponse {
-  symbol: string;
-  data: PriceData[];
-  regression: RegressionData;
-  start_hour: number;
-  name: string;
-  count: number;
-  end_hour: number;
-  crypto_id: number;
-  status: string;
+  crypto_count: number;
+  hours: number;
+  data: {
+    [key: string]: CryptoData[];
+  };
 }
 
-const RegressionAnalysis: React.FC = () => {
-  const [crypto, setCrypto] = useState<string>('1');
+const AllCryptoChart: React.FC = () => {
   const [hours, setHours] = useState<number>(6);
-  const [analysis, setAnalysis] = useState<ApiResponse | null>(null);
-  const [filteredData, setFilteredData] = useState<PriceData[]>([]);
-  const [cryptos, setCryptos] = useState<Crypto[]>([]);
+  const [chartData, setChartData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Cargar la lista de criptomonedas
-    const fetchCryptos = async () => {
-      try {
-        const response = await fetch('http://34.95.126.189/cryptos');
-        const data = await response.json();
-        if (data.status === 'success') {
-          setCryptos(data.data);
-        } else {
-          setError('Error al cargar las criptomonedas');
-        }
-      } catch (err) {
-        setError('Error de conexión al servidor');
-      }
-    };
-
-    fetchCryptos();
-  }, []);
-
-  // Filtrar datos cuando cambia el análisis o las horas
-  useEffect(() => {
-    if (analysis) {
-      const now = Date.now();
-      const milliseconds = hours * 60 * 60 * 1000;
-      const filtered = analysis.data.filter(point => 
-        now - point.timestamp_unix * 1000 <= milliseconds
-      );
-      setFilteredData(filtered);
-    }
-  }, [analysis, hours]);
-
-  const generateAnalysis = async () => {
+  const fetchData = async () => {
     setLoading(true);
     setError(null);
-    
     try {
-      const response = await fetch(
-        `http://34.95.126.189/prices/regression/?crypto_id=${crypto}&hours=${hours}`
-      );
-      const data: ApiResponse = await response.json();
-      
-      if (data.status === 'success') {
-        setAnalysis(data);
-      } else {
-        setError('Error al generar el análisis');
+      const response = await fetch(`http://34.95.126.189/prices/all-cryptos?hours=${hours}`);
+      if (!response.ok) {
+        throw new Error('Error al obtener los datos');
       }
+      const data: ApiResponse = await response.json();
+      setChartData(data);
     } catch (err) {
-      setError('Error de conexión al servidor');
+      setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
       setLoading(false);
     }
   };
 
-  // Función para renderizar el gráfico SVG
-  const renderChart = (data: PriceData[]) => {
-    if (!data || data.length === 0) return null;
+  const handleHoursChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    if (!isNaN(value) && value >= 1 && value <= 24) {
+      setHours(value);
+    }
+  };
 
-    // Preparamos los datos para el gráfico
-    const prices = data.map(d => d.price);
-    const timestamps = data.map(d => new Date(d.timestamp).toLocaleTimeString());
-    
-    // Calculamos dimensiones y escalas
+  // Opcional: cargar datos automáticamente al cambiar las horas
+  useEffect(() => {
+    fetchData();
+  }, [hours]);
+
+  const renderChart = () => {
+    if (!chartData || !chartData.data) return null;
+
+    const cryptos = Object.keys(chartData.data);
+    if (cryptos.length === 0) return <p>No hay datos disponibles</p>;
+
+    // Configuración del gráfico
     const width = 800;
     const height = 400;
-    const padding = 40;
+    const margin = { top: 20, right: 30, bottom: 50, left: 60 };
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+
+    // Procesamiento de datos
+    const allDataPoints = cryptos.flatMap(crypto => 
+      chartData.data[crypto].map(d => ({
+        ...d,
+        date: new Date(d.timestamp),
+        cryptoName: d.name
+      }))
+    );
+
+    if (allDataPoints.length === 0) return <p>No hay puntos de datos</p>;
+
+    // Encontrar mínimos y máximos para la escala
+    const minTime = new Date(Math.min(...allDataPoints.map(d => d.date.getTime())));
+    const maxTime = new Date(Math.max(...allDataPoints.map(d => d.date.getTime())));
+    const minPrice = Math.min(...allDataPoints.map(d => d.price));
+    const maxPrice = Math.max(...allDataPoints.map(d => d.price));
+
+    // Funciones de escala
+    const xScale = (date: Date) => 
+      margin.left + innerWidth * ((date.getTime() - minTime.getTime()) / (maxTime.getTime() - minTime.getTime()));
     
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
-    const priceRange = maxPrice - minPrice;
-    
-    const xScale = (index: number) => 
-      padding + (index * (width - 2 * padding)) / (data.length - 1);
     const yScale = (price: number) => 
-      height - padding - ((price - minPrice) * (height - 2 * padding)) / priceRange;
+      margin.top + innerHeight - innerHeight * ((price - minPrice) / (maxPrice - minPrice));
 
-    // Puntos para la línea de regresión (simplificado)
-    const regressionPoints = analysis ? [
-      { x: 0, y: analysis.regression.intercept },
-      { 
-        x: data.length - 1, 
-        y: analysis.regression.intercept + analysis.regression.slope * (data.length - 1)
-      }
-    ] : [];
+    // Colores para cada cripto
+    const colors = [
+      '#3366cc', '#dc3912', '#ff9900', '#109618', '#990099', 
+      '#0099c6', '#dd4477', '#66aa00', '#b82e2e', '#316395'
+    ];
 
-    return (
-      <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ maxWidth: '800px', margin: '0 auto' }}>
-        {/* Eje X */}
-        <line 
-          x1={padding} y1={height - padding} 
-          x2={width - padding} y2={height - padding} 
-          stroke="black" 
+    // Crear líneas para cada criptomoneda
+    const lines = cryptos.map((crypto, i) => {
+      const cryptoData = chartData.data[crypto]
+        .map(d => ({ ...d, date: new Date(d.timestamp) }))
+        .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+      const points = cryptoData.map(d => `${xScale(d.date)},${yScale(d.price)}`).join(' ');
+
+      return (
+        <polyline
+          key={crypto}
+          points={points}
+          fill="none"
+          stroke={colors[i % colors.length]}
+          strokeWidth="2"
         />
-        
-        {/* Eje Y */}
-        <line 
-          x1={padding} y1={padding} 
-          x2={padding} y2={height - padding} 
-          stroke="black" 
-        />
-        
-        {/* Etiquetas eje X */}
-        {timestamps
-          .filter((_, i) => i % Math.ceil(data.length / 5) === 0)
-          .map((time, i) => (
-            <text 
-              key={i}
-              x={xScale(i * Math.ceil(data.length / 5))} 
-              y={height - padding / 2} 
-              textAnchor="middle"
-              fontSize="10"
-            >
-              {time}
-            </text>
-          ))}
-        
-        {/* Etiquetas eje Y */}
-        {[minPrice, minPrice + priceRange * 0.25, minPrice + priceRange * 0.5, minPrice + priceRange * 0.75, maxPrice].map((price, i) => (
-          <text 
-            key={i}
-            x={padding / 2} 
-            y={yScale(price)} 
+      );
+    });
+
+    // Crear ejes
+    const timeTicks = [];
+    const priceTicks = [];
+    const numTicks = 5;
+
+    for (let i = 0; i < numTicks; i++) {
+      const time = new Date(minTime.getTime() + i * (maxTime.getTime() - minTime.getTime()) / (numTicks - 1));
+      timeTicks.push(
+        <g key={`time-${i}`}>
+          <line
+            x1={xScale(time)}
+            y1={margin.top + innerHeight}
+            x2={xScale(time)}
+            y2={margin.top + innerHeight + 5}
+            stroke="black"
+          />
+          <text
+            x={xScale(time)}
+            y={margin.top + innerHeight + 20}
             textAnchor="middle"
-            fontSize="10"
+            fontSize="12"
+          >
+            {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </text>
+        </g>
+      );
+
+      const price = minPrice + i * (maxPrice - minPrice) / (numTicks - 1);
+      priceTicks.push(
+        <g key={`price-${i}`}>
+          <line
+            x1={margin.left - 5}
+            y1={yScale(price)}
+            x2={margin.left}
+            y2={yScale(price)}
+            stroke="black"
+          />
+          <text
+            x={margin.left - 10}
+            y={yScale(price)}
+            textAnchor="end"
+            dominantBaseline="middle"
+            fontSize="12"
           >
             {price.toFixed(2)}
           </text>
-        ))}
-        
-        {/* Línea de precios */}
-        <polyline
-          fill="none"
-          stroke="#4285F4"
-          strokeWidth="2"
-          points={prices.map((price, i) => `${xScale(i)},${yScale(price)}`).join(' ')}
-        />
-        
-        {/* Línea de regresión */}
-        {analysis && (
-          <line
-            x1={xScale(0)}
-            y1={yScale(regressionPoints[0].y)}
-            x2={xScale(data.length - 1)}
-            y2={yScale(regressionPoints[1].y)}
-            stroke="#EA4335"
-            strokeWidth="2"
-            strokeDasharray="5,5"
-          />
-        )}
-        
-        {/* Leyenda */}
-        <rect x={width - 150} y={padding} width={140} height={40} fill="white" stroke="black" />
-        <text x={width - 140} y={padding + 15} fontSize="12">
-          <tspan fill="#4285F4">●</tspan> Precios
-        </text>
-        {analysis && (
-          <text x={width - 140} y={padding + 30} fontSize="12">
-            <tspan fill="#EA4335">●</tspan> Regresión
+        </g>
+      );
+    }
+
+    // Leyenda
+    const legend = cryptos.map((crypto, i) => {
+      const firstData = chartData.data[crypto][0];
+      return (
+        <g key={`legend-${crypto}`} transform={`translate(${width - 150}, ${20 + i * 20})`}>
+          <rect width="15" height="2" fill={colors[i % colors.length]} y="9" />
+          <text x="20" y="10" fontSize="12" dominantBaseline="middle">
+            {firstData.name} ({firstData.symbol})
           </text>
-        )}
-      </svg>
+        </g>
+      );
+    });
+
+    return (
+      <div style={{ overflowX: 'auto' }}>
+        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+          {/* Eje X (tiempo) */}
+          <line
+            x1={margin.left}
+            y1={margin.top + innerHeight}
+            x2={margin.left + innerWidth}
+            y2={margin.top + innerHeight}
+            stroke="black"
+          />
+          {timeTicks}
+
+          {/* Eje Y (precio) */}
+          <line
+            x1={margin.left}
+            y1={margin.top}
+            x2={margin.left}
+            y2={margin.top + innerHeight}
+            stroke="black"
+          />
+          {priceTicks}
+
+          {/* Líneas del gráfico */}
+          {lines}
+
+          {/* Leyenda */}
+          {legend}
+
+          {/* Títulos */}
+          <text
+            x={margin.left + innerWidth / 2}
+            y={height - 10}
+            textAnchor="middle"
+            fontSize="14"
+          >
+            Tiempo
+          </text>
+          <text
+            x={10}
+            y={height / 2}
+            textAnchor="middle"
+            fontSize="14"
+            transform={`rotate(-90, 10, ${height / 2})`}
+          >
+            Precio
+          </text>
+        </svg>
+      </div>
     );
   };
 
   return (
-    <div className="container black-text">
-      <h4 className="center">Análisis de Regresión Lineal</h4>
-      
+    <div className="container">
       <div className="row">
-        <div className="input-field col s12 m6 black-text">
-          <select 
-            value={crypto} 
-            onChange={(e) => setCrypto(e.target.value)}
-            className="browser-default black-text"
-            disabled={loading}
-          >
-            {cryptos.map((c) => (
-              <option key={c.id} value={c.id.toString()}>{c.name}</option>
-            ))}
-          </select>
-        </div>
-        
-        <div className="input-field col s12 m6 black-text">
+        <div className="col s12 m8 offset-m2">
           <form action="#">
             <p className="range-field">
-              <label>Horas: {hours}</label>
+              <label>Horas: {hours}h</label>
               <input 
                 type="range" 
                 min="1" 
                 max="24" 
                 value={hours} 
-                onChange={(e) => setHours(parseInt(e.target.value))}
-                disabled={loading}
+                onChange={handleHoursChange}
               />
             </p>
           </form>
@@ -241,43 +249,29 @@ const RegressionAnalysis: React.FC = () => {
       
       <div className="center">
         <button 
-          onClick={generateAnalysis}
+          onClick={fetchData}
           className="btn waves-effect waves-light blue"
           disabled={loading}
         >
-          {loading ? 'Generando...' : 'Generar Análisis'}
+          {loading ? 'Cargando...' : 'Generar Gráfico'}
         </button>
       </div>
       
       {error && (
         <div className="row">
-          <div className="col s12">
-            <div className="card-panel red lighten-2 white-text">
-              {error}
-            </div>
+          <div className="col s12 center red-text">
+            {error}
           </div>
         </div>
       )}
       
-      {analysis && (
-        <div className="row">
-          <div className="col s12">
-            <h5>Ecuación de regresión lineal:</h5>
-            <div className="card-panel blue-custom white-text">
-              <code style={{ fontSize: '1.2em' }}>{analysis.regression.equation}</code>
-              <p>R² = {analysis.regression.r_squared.toFixed(4)}</p>
-              <p>Datos mostrados: últimas {hours} horas ({filteredData.length} puntos)</p>
-            </div>
-            
-            <h5>Gráfico de regresión:</h5>
-            <div className="card-panel">
-              {renderChart(filteredData)}
-            </div>
-          </div>
+      <div className="row">
+        <div className="col s12">
+          {renderChart()}
         </div>
-      )}
+      </div>
     </div>
   );
 };
 
-export default RegressionAnalysis;
+export default AllCryptoChart;
