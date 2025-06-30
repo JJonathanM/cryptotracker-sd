@@ -28,56 +28,41 @@ const CurrentPrices: React.FC = () => {
            `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${ms}`;
   };
 
-  // Estrategia de múltiples fuentes para imágenes con fallbacks
-  const getCryptoImage = (symbol: string, name: string): string => {
-    const symbolLower = symbol.toLowerCase();
-    
-    const coingeckoImages: Record<string, string> = {
-      'BTC': 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
-      'ETH': 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
-      'XRP': 'https://assets.coingecko.com/coins/images/44/large/xrp-symbol-white-128.png',
-      'SOL': 'https://assets.coingecko.com/coins/images/4128/large/solana.png',
-      'TRX': 'https://assets.coingecko.com/coins/images/1094/large/tron-logo.png',
-      'DOGE': 'https://assets.coingecko.com/coins/images/5/large/dogecoin.png',
-      'ADA': 'https://assets.coingecko.com/coins/images/975/large/cardano.png',
-      'HYPE': 'https://assets.coingecko.com/coins/images/39593/large/Hyperliquid.png',
-      'BCH': 'https://assets.coingecko.com/coins/images/780/large/bitcoin-cash-circle.png',
-      'LINK': 'https://assets.coingecko.com/coins/images/877/large/chainlink-new-logo.png'
+  // Mapeo de símbolos a nombres de archivo en el bucket
+  const getCryptoImageUrl = (symbol: string): string => {
+    const symbolMappings: Record<string, string> = {
+      'BTC': 'bitcoin.png',
+      'ETH': 'ethereum.png',
+      'XRP': 'xrp.png',
+      'SOL': 'solana.png',
+      'TRX': 'tron.png',
+      'DOGE': 'dogecoin.png',
+      'ADA': 'cardano.png',
+      'HYPE': 'hyperliquid.png',
+      'BCH': 'bitcoincash.png',
+      'LINK': 'chainlink.png'
     };
 
-    const cryptoIconsUrl = `https://cryptoicons.org/api/icon/${symbolLower}/200`;
-    const placeholderUrl = `https://ui-avatars.com/api/?name=${symbol}&background=random&color=fff&rounded=true&size=32`;
-    const localFallback = '/images/crypto/generic.png';
-
-    return coingeckoImages[symbol] || cryptoIconsUrl || placeholderUrl || localFallback;
+    const filename = symbolMappings[symbol] || 'generic.png';
+    return `https://storage.googleapis.com/cryptotracker-logos/${filename}`;
   };
 
-  // Componente de imagen seguro con múltiples fallbacks
-  const SafeCryptoImage = ({ symbol, name }: { symbol: string; name: string }) => {
-    const [imgSrc, setImgSrc] = useState(getCryptoImage(symbol, name));
-    const [attempts, setAttempts] = useState(0);
+  // Componente de imagen simple con fallback
+  const CryptoImage = ({ symbol, name }: { symbol: string; name: string }) => {
+    const [imgSrc, setImgSrc] = useState(getCryptoImageUrl(symbol));
     
-    const fallbacks = [
-      `https://cryptoicons.org/api/icon/${symbol.toLowerCase()}/200`,
-      `https://ui-avatars.com/api/?name=${symbol}&background=random&color=fff&rounded=true&size=32`,
-      '/images/crypto/generic.png'
-    ];
-
     const handleError = () => {
-      if (attempts < fallbacks.length) {
-        setImgSrc(fallbacks[attempts]);
-        setAttempts(attempts + 1);
-      }
+      // Fallback genérico si la imagen no existe
+      setImgSrc('https://storage.googleapis.com/cryptotracker-logos/generic.png');
     };
 
     return (
       <img 
         src={imgSrc} 
         alt={name} 
-        style={{ width: '24px', height: '24px' }}
+        style={{ width: '24px', height: '24px', objectFit: 'contain' }}
         onError={handleError}
         loading="lazy"
-        crossOrigin="anonymous"
       />
     );
   };
@@ -132,7 +117,7 @@ const CurrentPrices: React.FC = () => {
           {prices.map((crypto) => (
             <tr key={crypto.id}>
               <td>
-                <SafeCryptoImage symbol={crypto.symbol} name={crypto.name} />
+                <CryptoImage symbol={crypto.symbol} name={crypto.name} />
               </td>
               <td>{crypto.name}</td>
               <td>{crypto.symbol}</td>
