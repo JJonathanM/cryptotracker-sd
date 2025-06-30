@@ -25,16 +25,16 @@ CREATE TABLE IF NOT EXISTS prices (
 
 -- Insertar criptomonedas principales
 INSERT INTO crypto (symbol, name, image_url) VALUES
-    ('BTC', 'Bitcoin', 'https://cryptologos.cc/logos/bitcoin-btc-logo.png'),
-    ('ETH', 'Ethereum', 'https://cryptologos.cc/logos/ethereum-eth-logo.png'),
-    ('XRP', 'XRP', 'https://cryptologos.cc/logos/xrp-xrp-logo.png'),
-    ('SOL', 'Solana', 'https://cryptologos.cc/logos/solana-sol-logo.png'),
-    ('TRX', 'TRON', 'https://cryptologos.cc/logos/tron-trx-logo.png'),
-    ('DOGE', 'Dogecoin', 'https://cryptologos.cc/logos/dogecoin-doge-logo.png'),
-    ('ADA', 'Cardano', 'https://cryptologos.cc/logos/cardano-ada-logo.png'),
-    ('HYPE', 'Hyperliquid', 'https://drive.google.com/uc?export=view&id=1_DXtPO3UxoPyMHADRsIa140ePwewXzSb'),
-    ('BCH', 'Bitcoin Cash', 'https://cryptologos.cc/logos/bitcoin-cash-bch-logo.png'),
-    ('LINK', 'Chainlink', 'https://cryptologos.cc/logos/chainlink-link-logo.png')
+    ('BTC', 'Bitcoin', 'https://storage.googleapis.com/cryptotracker-logos/bitcoin.png'),
+    ('ETH', 'Ethereum', 'https://storage.googleapis.com/cryptotracker-logos/ethereum.png'),
+    ('XRP', 'XRP', 'https://storage.googleapis.com/cryptotracker-logos/xrp.png'),
+    ('SOL', 'Solana', 'https://storage.googleapis.com/cryptotracker-logos/solana.png'),
+    ('TRX', 'TRON', 'https://storage.googleapis.com/cryptotracker-logos/tron.png'),
+    ('DOGE', 'Dogecoin', 'https://storage.googleapis.com/cryptotracker-logos/dogecoin.png'),
+    ('ADA', 'Cardano', 'https://storage.googleapis.com/cryptotracker-logos/cardano.png'),
+    ('HYPE', 'Hyperliquid', 'https://storage.googleapis.com/cryptotracker-logos/hyperliquid.png'),
+    ('BCH', 'Bitcoin Cash', 'https://storage.googleapis.com/cryptotracker-logos/bitcoincash.png'),
+    ('LINK', 'Chainlink', 'https://storage.googleapis.com/cryptotracker-logos/chainlink.png')
 ON DUPLICATE KEY UPDATE name=VALUES(name), image_url=VALUES(image_url);
 
 -- Vista: precio más reciente por cripto
