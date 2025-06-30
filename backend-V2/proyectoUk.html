@@ -393,9 +393,11 @@
                             
                             // Buscar el icono correspondiente - versión mejorada
                             const cryptoSymbol = crypto.symbol.toLowerCase();
-                            const cryptoName = crypto.name.toLowerCase();
+                            const cryptoName = crypto.name.toLowerCase().replace(/ /g, '');
+
                             const iconUrl = availableIcons[cryptoSymbol] || 
                                         availableIcons[cryptoName] || 
+                                        availableIcons[cryptoSymbol.replace('usdt', '')] || 
                                         null;
                             
                             return { 
@@ -570,120 +572,86 @@
                 return;
             }
 
+            showLoading('compareChart');
+            
             try {
-                const response = await fetch(`${getServerUrl()}/prices/compare?crypto_ids=${cryptoIds}&start_hour=${startHour}&end_hour=${endHour}`);
-                const rawData = await response.json();
-                
-                console.log("Datos recibidos para comparación:", rawData); // Debug
-                
-                // Adaptación: Verificar si los datos vienen como array simple o con estructura
-                let dataArray;
-                if (rawData.status === 'success' && rawData.data) {
-                    dataArray = rawData.data;
-                } else if (Array.isArray(rawData)) {
-                    // Si viene directamente como array
-                    dataArray = rawData;
-                } else {
-                    // Si es un objeto individual, convertirlo a array
-                    dataArray = [rawData];
-                }
-                
-                if (!Array.isArray(dataArray)) {
-                    throw new Error("Formato de datos no válido");
-                }
-                
-                // Agrupar los datos por símbolo de criptomoneda
-                const groupedData = {};
-                dataArray.forEach(item => {
-                    if (!groupedData[item.symbol]) {
-                        groupedData[item.symbol] = [];
-                    }
-                    groupedData[item.symbol].push(item);
+                // Obtener datos para cada criptomoneda
+                const ids = cryptoIds.split(',').map(id => id.trim());
+                const cryptoDataPromises = ids.map(async id => {
+                    const response = await fetch(`${getServerUrl()}/prices/history?crypto_id=${id}&hours=24`);
+                    return response.json();
                 });
+
+                const cryptoResponses = await Promise.all(cryptoDataPromises);
+                const validCryptos = cryptoResponses.filter(response => response.status === 'success');
                 
-                // Ordenar cada grupo por hora o timestamp
-                Object.keys(groupedData).forEach(symbol => {
-                    groupedData[symbol].sort((a, b) => {
-                        // Intentar ordenar por hora primero, luego por timestamp
-                        if (a.hour !== undefined && b.hour !== undefined) {
-                            return a.hour - b.hour;
-                        } else if (a.timestamp && b.timestamp) {
-                            return new Date(a.timestamp) - new Date(b.timestamp);
-                        }
-                        return 0;
+                if (validCryptos.length === 0) {
+                    throw new Error("No hay datos válidos para mostrar");
+                }
+
+                // Normalizar datos basados en cambio porcentual
+                const datasets = validCryptos.map((crypto, index) => {
+                    const prices = crypto.data.map(point => point.price);
+                    const basePrice = prices[0];
+                    
+                    // Calcular cambio porcentual para cada punto
+                    const normalizedData = prices.map(price => {
+                        return ((price - basePrice) / basePrice * 100).toFixed(2);
                     });
+
+                    const colors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
+                    const color = colors[index % colors.length];
+                    
+                    return {
+                        label: `${crypto.symbol} - ${crypto.name}`,
+                        data: normalizedData,
+                        borderColor: color,
+                        backgroundColor: `${color}20`,
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    };
                 });
-                
-                console.log("Datos agrupados:", groupedData); // Debug
-                
+
+                // Crear etiquetas de tiempo
+                const timeLabels = validCryptos[0].data.map(point => 
+                    new Date(point.timestamp).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
+                );
+
+                // Renderizar gráfico
                 const ctx = document.getElementById('compareChart').getContext('2d');
                 
                 if (compareChart) {
                     compareChart.destroy();
                 }
                 
-                const colors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
-                const datasets = [];
-                let colorIndex = 0;
-                
-                // Crear un dataset para cada criptomoneda
-                Object.keys(groupedData).forEach(symbol => {
-                    const cryptoData = groupedData[symbol];
-                    if (cryptoData && cryptoData.length > 0) {
-                        datasets.push({
-                            label: `${symbol} - ${cryptoData[0].name}`,
-                            data: cryptoData.map(point => point.price),
-                            borderColor: colors[colorIndex % colors.length],
-                            backgroundColor: colors[colorIndex % colors.length] + '20',
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.1,
-                            pointRadius: 3,
-                            pointHoverRadius: 6
-                        });
-                        colorIndex++;
-                    }
-                });
-                
-                if (datasets.length === 0) {
-                    throw new Error("No hay datos válidos para mostrar en el gráfico");
-                }
-                
-                // Crear las etiquetas del eje X usando los datos del primer grupo
-                const firstGroup = Object.values(groupedData)[0];
-                const labels = firstGroup.map(point => {
-                    if (point.hour !== undefined) {
-                        return `${point.hour}:00`;
-                    } else if (point.timestamp) {
-                        return new Date(point.timestamp).toLocaleTimeString();
-                    }
-                    return 'N/A';
-                });
-                
                 compareChart = new Chart(ctx, {
                     type: 'line',
-                    data: { labels, datasets },
+                    data: {
+                        labels: timeLabels,
+                        datasets: datasets
+                    },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false,
-                        },
                         scales: {
                             y: {
-                                beginAtZero: false,
+                                beginAtZero: true,
                                 grid: {
                                     color: 'rgba(255, 255, 255, 0.05)'
                                 },
                                 ticks: {
                                     color: 'rgba(255, 255, 255, 0.7)',
                                     callback: function(value) {
-                                        return '$' + value.toLocaleString(undefined, {
-                                            minimumFractionDigits: 0,
-                                            maximumFractionDigits: 2
-                                        });
+                                        return `${value}%`;
                                     }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Cambio porcentual',
+                                    color: 'rgba(255, 255, 255, 0.7)'
                                 }
                             },
                             x: {
@@ -691,45 +659,50 @@
                                     color: 'rgba(255, 255, 255, 0.05)'
                                 },
                                 ticks: {
-                                    color: 'rgba(255, 255, 255, 0.7)'
+                                    color: 'rgba(255, 255, 255, 0.7)',
+                                    maxRotation: 45,
+                                    minRotation: 45
                                 }
                             }
                         },
                         plugins: {
                             legend: {
+                                position: 'top',
                                 labels: {
-                                    color: 'rgba(255, 255, 255, 0.7)'
+                                    color: 'rgba(255, 255, 255, 0.7)',
+                                    padding: 20,
+                                    boxWidth: 12
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.parsed.y}%`;
+                                    }
                                 }
                             },
                             title: {
                                 display: true,
-                                text: `Comparación de Criptomonedas (${startHour}:00 - ${endHour}:00)`,
+                                text: 'Comparación de rendimiento porcentual',
                                 color: 'rgba(255, 255, 255, 0.8)',
                                 font: {
                                     size: 16
                                 }
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                                titleColor: 'rgba(255, 255, 255, 0.9)',
-                                bodyColor: 'rgba(255, 255, 255, 0.8)',
-                                borderColor: 'rgba(99, 102, 241, 0.5)',
-                                borderWidth: 1,
-                                callbacks: {
-                                    label: function(context) {
-                                        return `${context.dataset.label}: $${context.parsed.y.toLocaleString()}`;
-                                    }
-                                }
                             }
+                        },
+                        interaction: {
+                            mode: 'nearest',
+                            axis: 'x',
+                            intersect: false
                         }
                     }
                 });
-                
-                console.log("Gráfico de comparación creado exitosamente"); // Debug
-                
+
             } catch (error) {
                 console.error("Error en loadCompareChart:", error);
-                alert('Error cargando comparación: ' + error.message);
+                showError('compareChart', 'Error cargando comparación: ' + error.message);
             }
         }
 
