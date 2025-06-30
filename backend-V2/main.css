@@ -390,6 +390,12 @@
             gap: 0.25rem;
         }
 
+        .mini-chart-container {
+            width: 100px;
+            height: 40px;
+            margin-top: 0.5rem;
+        }
+
         .regression-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
