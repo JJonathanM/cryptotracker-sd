@@ -227,6 +227,101 @@
             }
         }
 
+        // Función para crear mini gráficas
+        function createMiniChart(cryptoId, historyData) {
+            const ctx = document.getElementById(`miniChart-${cryptoId}`).getContext('2d');
+            
+            // Determinar color basado en la tendencia (último vs primer precio)
+            const firstPrice = historyData[0].price;
+            const lastPrice = historyData[historyData.length - 1].price;
+            const isPositive = lastPrice >= firstPrice;
+            const chartColor = isPositive ? '#10b981' : '#ef4444';
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: historyData.map((_, i) => i), // Solo índices para simplificar
+                    datasets: [{
+                        data: historyData.map(point => point.price),
+                        borderColor: chartColor,
+                        backgroundColor: 'transparent',
+                        borderWidth: 1,
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: { 
+                            display: false,
+                            beginAtZero: false
+                        }
+                    },
+                    interaction: { mode: 'nearest', intersect: false }
+                }
+            });
+        }
+
+
+        // Obtener iconos
+        function getAvailableIcons() {
+            // Mapeo completo de símbolos/names a URLs
+            const iconMap = {
+                // Bitcoin Cash
+                'bch': 'bitcoin.png',
+                'bitcoincash': 'bitcoin.png',
+                
+                // Cardano
+                'ada': 'cardano.png',
+                'cardano': 'cardano.png',
+                
+                // Chainlink
+                'link': 'chainlink.png',
+                'chainlink': 'chainlink.png',
+                
+                // Dogecoin
+                'doge': 'dogecoin.png',
+                'dogecoin': 'dogecoin.png',
+                
+                // Ethereum
+                'eth': 'ethereum.png',
+                'ethereum': 'ethereum.png',
+                
+                // Hyperliquid
+                'hyperliquid': 'hyperliquid.png',
+                
+                // Solana
+                'sol': 'solana.png',
+                'solana': 'solana.png',
+                
+                // Tron
+                'trx': 'tron.png',
+                'tron': 'tron.png',
+                
+                // XRP/Ripple
+                'xrp': 'xrp.png',
+                'ripple': 'xrp.png'
+            };
+            
+            // Convertir a URLs completas
+            const baseUrl = 'https://storage.googleapis.com/cryptotracker-logos/';
+            const result = {};
+            
+            for (const [key, value] of Object.entries(iconMap)) {
+                result[key] = baseUrl + value;
+            }
+            
+            return Promise.resolve(result);
+        }
+
         async function loadHealthStatus() {
             try {
                 const response = await fetch(`${getServerUrl()}/health`);
@@ -281,6 +376,9 @@
         async function loadCurrentPrices() {
             showLoading('currentPrices');
             try {
+                // Obtener los iconos disponibles desde la lista predefinida
+                const availableIcons = await getAvailableIcons();
+                
                 const response = await fetch(`${getServerUrl()}/prices/current`);
                 const data = await response.json();
                 
@@ -292,10 +390,26 @@
                         try {
                             const historyResponse = await fetch(`${getServerUrl()}/prices/history?crypto_id=${crypto.id}&hours=24`);
                             const historyData = await historyResponse.json();
-                            return { ...crypto, history: historyData.status === 'success' ? historyData.data : [] };
+                            
+                            // Buscar el icono correspondiente - versión mejorada
+                            const cryptoSymbol = crypto.symbol.toLowerCase();
+                            const cryptoName = crypto.name.toLowerCase();
+                            const iconUrl = availableIcons[cryptoSymbol] || 
+                                        availableIcons[cryptoName] || 
+                                        null;
+                            
+                            return { 
+                                ...crypto, 
+                                history: historyData.status === 'success' ? historyData.data : [],
+                                iconUrl: iconUrl
+                            };
                         } catch (error) {
                             console.error(`Error loading history for ${crypto.symbol}:`, error);
-                            return { ...crypto, history: [] };
+                            return { 
+                                ...crypto, 
+                                history: [], 
+                                iconUrl: null 
+                            };
                         }
                     });
                     
@@ -304,15 +418,31 @@
                     
                     // Generar HTML para cada criptomoneda
                     cryptosWithHistory.forEach(crypto => {
-                        // Simulate random change for UI purposes
-                        const change = (Math.random() * 10 - 5).toFixed(2);
-                        const isPositive = parseFloat(change) >= 0;
+                        // Calcular cambio porcentual basado en el historial real si está disponible
+                        let change = 0;
+                        let isPositive = true;
+                        
+                        if (crypto.history.length > 1) {
+                            const firstPrice = crypto.history[0].price;
+                            const lastPrice = crypto.history[crypto.history.length - 1].price;
+                            change = ((lastPrice - firstPrice) / firstPrice * 100).toFixed(2);
+                            isPositive = change >= 0;
+                        } else {
+                            // Fallback: cambio aleatorio si no hay historial
+                            change = (Math.random() * 10 - 5).toFixed(2);
+                            isPositive = parseFloat(change) >= 0;
+                        }
                         
                         html += `
                             <div class="crypto-card">
                                 <div class="crypto-header">
                                     <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        ${crypto.image_url ? `<img src="${crypto.image_url}" alt="${crypto.symbol}" style="width: 24px; height: 24px; border-radius: 50%;">` : ''}
+                                        ${crypto.iconUrl ? `
+                                            <img src="${crypto.iconUrl}" 
+                                                alt="${crypto.symbol}" 
+                                                class="crypto-icon"
+                                                onerror="this.onerror=null;this.style.display='none'">
+                                        ` : ''}
                                         <div class="crypto-symbol">${crypto.symbol}</div>
                                     </div>
                                     <div class="crypto-price">$${crypto.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 8})}</div>
@@ -345,49 +475,6 @@
             } catch (error) {
                 showError('currentPrices', error.message);
             }
-        }
-
-        // Función para crear mini gráficas
-        function createMiniChart(cryptoId, historyData) {
-            const ctx = document.getElementById(`miniChart-${cryptoId}`).getContext('2d');
-            
-            // Determinar color basado en la tendencia (último vs primer precio)
-            const firstPrice = historyData[0].price;
-            const lastPrice = historyData[historyData.length - 1].price;
-            const isPositive = lastPrice >= firstPrice;
-            const chartColor = isPositive ? '#10b981' : '#ef4444';
-            
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: historyData.map((_, i) => i), // Solo índices para simplificar
-                    datasets: [{
-                        data: historyData.map(point => point.price),
-                        borderColor: chartColor,
-                        backgroundColor: 'transparent',
-                        borderWidth: 1,
-                        fill: false,
-                        tension: 0.1,
-                        pointRadius: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { enabled: false }
-                    },
-                    scales: {
-                        x: { display: false },
-                        y: { 
-                            display: false,
-                            beginAtZero: false
-                        }
-                    },
-                    interaction: { mode: 'nearest', intersect: false }
-                }
-            });
         }
 
         async function loadHistoryChart() {

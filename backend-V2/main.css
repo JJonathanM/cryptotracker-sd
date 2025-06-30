@@ -396,6 +396,15 @@
             margin-top: 0.5rem;
         }
 
+        .crypto-header img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px;
+        }
+
         .regression-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
